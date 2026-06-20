@@ -4,6 +4,8 @@ import com.delivery.model.*;
 import com.delivery.repository.AgentRepository;
 import com.delivery.repository.LeaveApplicationRepository;
 import com.delivery.repository.LeaveBalanceRepository;
+import com.delivery.event.NotificationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,16 +20,16 @@ public class LeaveService {
     private final LeaveApplicationRepository leaveApplicationRepository;
     private final LeaveBalanceRepository leaveBalanceRepository;
     private final AgentRepository agentRepository;
-    private final NotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public LeaveService(LeaveApplicationRepository leaveApplicationRepository,
                         LeaveBalanceRepository leaveBalanceRepository,
                         AgentRepository agentRepository,
-                        NotificationService notificationService) {
+                        ApplicationEventPublisher eventPublisher) {
         this.leaveApplicationRepository = leaveApplicationRepository;
         this.leaveBalanceRepository = leaveBalanceRepository;
         this.agentRepository = agentRepository;
-        this.notificationService = notificationService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -68,7 +70,16 @@ public class LeaveService {
         }
 
         LeaveApplication leave = new LeaveApplication(agent, startDate, endDate, leaveType, reason);
-        return leaveApplicationRepository.save(leave);
+        LeaveApplication saved = leaveApplicationRepository.save(leave);
+        eventPublisher.publishEvent(new NotificationEvent(
+            this,
+            agent.getUser().getUsername(),
+            "Leave Application Applied",
+            "Your leave request from " + startDate + " to " + endDate + " has been submitted and is pending review.",
+            "LEAVE",
+            "MEDIUM"
+        ));
+        return saved;
     }
 
     @Transactional
@@ -101,12 +112,14 @@ public class LeaveService {
         LeaveApplication saved = leaveApplicationRepository.save(leave);
         
         // Notify Agent
-        notificationService.createNotification(
-            leave.getAgent().getUser(), 
+        eventPublisher.publishEvent(new NotificationEvent(
+            this,
+            leave.getAgent().getUser().getUsername(), 
             "Leave Application Approved", 
             "Your leave request from " + leave.getStartDate() + " to " + leave.getEndDate() + " has been approved.", 
-            "LEAVE"
-        );
+            "LEAVE",
+            "HIGH"
+        ));
 
         return saved;
     }
@@ -125,12 +138,14 @@ public class LeaveService {
         LeaveApplication saved = leaveApplicationRepository.save(leave);
 
         // Notify Agent
-        notificationService.createNotification(
-            leave.getAgent().getUser(), 
+        eventPublisher.publishEvent(new NotificationEvent(
+            this,
+            leave.getAgent().getUser().getUsername(), 
             "Leave Application Rejected", 
             "Your leave request from " + leave.getStartDate() + " to " + leave.getEndDate() + " has been rejected. Remarks: " + remarks, 
-            "LEAVE"
-        );
+            "LEAVE",
+            "HIGH"
+        ));
 
         return saved;
     }

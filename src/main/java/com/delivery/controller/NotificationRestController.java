@@ -62,4 +62,12 @@ public class NotificationRestController {
         }
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/delete/{id}")
+    public ResponseEntity<Map<String, Object>> deleteNotification(@PathVariable("id") Integer id) {
+        notificationService.deleteNotification(id);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        return ResponseEntity.ok(response);
+    }
 }

@@ -21,6 +21,12 @@ public class Notification {
     @JoinColumn(name = "user_id", nullable = false)
     private User recipient;
 
+    @Column(nullable = false, length = 30)
+    private String role; // ADMIN, AGENT, CUSTOMER
+
+    @Column(nullable = false, length = 20)
+    private String priority = "MEDIUM"; // LOW, MEDIUM, HIGH
+
     @Column(nullable = false, length = 150)
     private String title;
 
@@ -40,9 +46,22 @@ public class Notification {
 
     public Notification(User recipient, String title, String message, String type) {
         this.recipient = recipient;
+        this.role = recipient != null ? recipient.getRole() : "GENERAL";
         this.title = title;
         this.message = message;
         this.type = type;
+        this.priority = "MEDIUM";
+        this.isRead = false;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    public Notification(User recipient, String role, String title, String message, String type, String priority) {
+        this.recipient = recipient;
+        this.role = role;
+        this.title = title;
+        this.message = message;
+        this.type = type;
+        this.priority = priority;
         this.isRead = false;
         this.createdAt = LocalDateTime.now();
     }
@@ -102,5 +121,21 @@ public class Notification {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public String getPriority() {
+        return priority;
+    }
+
+    public void setPriority(String priority) {
+        this.priority = priority;
     }
 }

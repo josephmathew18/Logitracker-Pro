@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.context.ApplicationEventPublisher;
+import com.delivery.event.NotificationEvent;
 
 /**
  * Service to manage deliveries, assignments, status updates, GPS tracking logs, and statistics.
@@ -34,11 +36,12 @@ public class DeliveryService {
     private final TrackingRepository trackingRepository;
     private final OrderRepository orderRepository;
     private final AgentService agentService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public DeliveryService(DeliveryRepository deliveryRepository, CustomerRepository customerRepository,
                            AgentRepository agentRepository, VehicleRepository vehicleRepository,
                            TrackingRepository trackingRepository, OrderRepository orderRepository,
-                           AgentService agentService) {
+                           AgentService agentService, ApplicationEventPublisher eventPublisher) {
         this.deliveryRepository = deliveryRepository;
         this.customerRepository = customerRepository;
         this.agentRepository = agentRepository;
@@ -46,6 +49,7 @@ public class DeliveryService {
         this.trackingRepository = trackingRepository;
         this.orderRepository = orderRepository;
         this.agentService = agentService;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -159,6 +163,7 @@ public class DeliveryService {
         }
 
         deliveryRepository.save(delivery);
+        eventPublisher.publishEvent(new NotificationEvent(this, agent.getUser().getUsername(), "Delivery Assigned", "You have been assigned delivery #" + delivery.getId() + ".", "DELIVERY", "HIGH"));
 
         // Sync with unified order status
         order.setDeliveryStatus("ASSIGNED");
@@ -210,7 +215,11 @@ public class DeliveryService {
             Double startLat = delivery.getPickupLatitude() != null ? delivery.getPickupLatitude() : 9.7288;
             Double startLng = delivery.getPickupLongitude() != null ? delivery.getPickupLongitude() : 77.1215;
             logTracking(delivery, startLat, startLng, "ACCEPTED");
+            if (delivery.getCustomer() != null) {
+                eventPublisher.publishEvent(new NotificationEvent(this, delivery.getCustomer().getUser().getUsername(), "Delivery Accepted", "Your delivery order #" + deliveryId + " has been accepted by agent " + (delivery.getAgent() != null ? delivery.getAgent().getName() : "") + ".", "DELIVERY", "MEDIUM"));
+            }
         } else {
+            eventPublisher.publishEvent(new NotificationEvent(this, "admin", "Delivery Assignment Rejected", "Agent rejected the assignment for delivery #" + deliveryId + ".", "DELIVERY", "HIGH"));
             delivery.setStatus("PENDING");
             delivery.setAgent(null);
             delivery.setVehicle(null);
@@ -255,6 +264,32 @@ public class DeliveryService {
         delivery.setCurrentLongitude(lng);
         delivery.setStatus(newStatus);
         deliveryRepository.save(delivery);
+
+        String notifTitle = "Delivery Update";
+        String notifMsg = "Your delivery status has been updated to: " + newStatus;
+        String priority = "MEDIUM";
+        if ("PICKED_UP".equalsIgnoreCase(newStatus)) {
+            notifTitle = "Package Picked Up";
+            notifMsg = "Your package for order #" + deliveryId + " has been picked up.";
+        } else if ("IN_TRANSIT".equalsIgnoreCase(newStatus)) {
+            notifTitle = "Delivery In Transit";
+            notifMsg = "Your delivery order #" + deliveryId + " is now in transit.";
+        } else if ("DELIVERED".equalsIgnoreCase(newStatus)) {
+            notifTitle = "Delivery Completed";
+            notifMsg = "Your package for order #" + deliveryId + " has been successfully delivered!";
+            priority = "HIGH";
+        } else if ("FAILED".equalsIgnoreCase(newStatus)) {
+            notifTitle = "Delivery Failed";
+            notifMsg = "Your delivery order #" + deliveryId + " could not be delivered.";
+            priority = "HIGH";
+        } else if ("CANCELLED".equalsIgnoreCase(newStatus)) {
+            notifTitle = "Delivery Cancelled";
+            notifMsg = "Your delivery order #" + deliveryId + " has been cancelled.";
+            priority = "HIGH";
+        }
+        if (delivery.getCustomer() != null) {
+            eventPublisher.publishEvent(new NotificationEvent(this, delivery.getCustomer().getUser().getUsername(), notifTitle, notifMsg, "DELIVERY", priority));
+        }
 
         // Sync with unified order status
         orderRepository.findByDeliveryId(deliveryId).ifPresent(order -> {

@@ -13,6 +13,8 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.context.ApplicationEventPublisher;
+import com.delivery.event.NotificationEvent;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -30,16 +32,19 @@ public class CustomerController {
     private final PaymentService paymentService;
     private final PdfGenerationService pdfGenerationService;
     private final OrderRepository orderRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public CustomerController(DeliveryService deliveryService, UserService userService, 
                               FeedbackService feedbackService, PaymentService paymentService,
-                              PdfGenerationService pdfGenerationService, OrderRepository orderRepository) {
+                              PdfGenerationService pdfGenerationService, OrderRepository orderRepository,
+                              ApplicationEventPublisher eventPublisher) {
         this.deliveryService = deliveryService;
         this.userService = userService;
         this.feedbackService = feedbackService;
         this.paymentService = paymentService;
         this.pdfGenerationService = pdfGenerationService;
         this.orderRepository = orderRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @GetMapping("/dashboard")
@@ -314,6 +319,7 @@ public class CustomerController {
             Customer customer = customerOpt.get();
             try {
                 userService.updateCustomerProfile(customer.getId(), name, phone, email, address, city, state, pincode, file);
+                eventPublisher.publishEvent(new NotificationEvent(this, username, "Profile Updated", "Your profile details have been successfully updated.", "CUSTOMER", "LOW"));
                 redirectAttributes.addFlashAttribute("successMessage", "Profile updated successfully.");
             } catch (Exception e) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Failed to update profile: " + e.getMessage());
@@ -366,6 +372,7 @@ public class CustomerController {
 
         try {
             userService.updateCustomerPassword(customer.getId(), currentPassword, newPassword);
+            eventPublisher.publishEvent(new NotificationEvent(this, username, "Password Changed", "Your password has been changed successfully.", "SYSTEM", "HIGH"));
 
             // Invalidate session and clear context
             HttpSession session = request.getSession(false);

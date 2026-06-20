@@ -4,6 +4,8 @@ import com.delivery.model.Agent;
 import com.delivery.model.Attendance;
 import com.delivery.repository.AgentRepository;
 import com.delivery.repository.AttendanceRepository;
+import com.delivery.event.NotificationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,12 +21,12 @@ public class AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final AgentRepository agentRepository;
-    private final NotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public AttendanceService(AttendanceRepository attendanceRepository, AgentRepository agentRepository, NotificationService notificationService) {
+    public AttendanceService(AttendanceRepository attendanceRepository, AgentRepository agentRepository, ApplicationEventPublisher eventPublisher) {
         this.attendanceRepository = attendanceRepository;
         this.agentRepository = agentRepository;
-        this.notificationService = notificationService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -54,8 +56,8 @@ public class AttendanceService {
         // Trigger notifications to Admin
         String agentName = agent.getName();
         String shiftType = agent.getShiftType() != null ? agent.getShiftType() : "Morning";
-        notificationService.createNotification("admin", "Agent Shift Started", "Agent " + agentName + " (" + agentId + ") has started their " + shiftType + " shift.", "GENERAL");
-        notificationService.createNotification("admin", "Agent Checked In", "Agent " + agentName + " (" + agentId + ") checked in at " + now.toLocalTime().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a")) + ".", "GENERAL");
+        eventPublisher.publishEvent(new NotificationEvent(this, "admin", "Agent Shift Started", "Agent " + agentName + " (" + agentId + ") has started their " + shiftType + " shift.", "ATTENDANCE", "MEDIUM"));
+        eventPublisher.publishEvent(new NotificationEvent(this, "admin", "Agent Checked In", "Agent " + agentName + " (" + agentId + ") checked in at " + now.toLocalTime().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a")) + (isLate ? " (LATE)" : "") + ".", "ATTENDANCE", isLate ? "HIGH" : "LOW"));
 
         return saved;
     }
@@ -86,8 +88,8 @@ public class AttendanceService {
         Agent agent = attendance.getAgent();
         String agentName = agent.getName();
         String shiftType = agent.getShiftType() != null ? agent.getShiftType() : "Morning";
-        notificationService.createNotification("admin", "Agent Shift Ended", "Agent " + agentName + " (" + agentId + ") has ended their " + shiftType + " shift.", "GENERAL");
-        notificationService.createNotification("admin", "Agent Checked Out", "Agent " + agentName + " (" + agentId + ") checked out at " + now.toLocalTime().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a")) + ".", "GENERAL");
+        eventPublisher.publishEvent(new NotificationEvent(this, "admin", "Agent Shift Ended", "Agent " + agentName + " (" + agentId + ") has ended their " + shiftType + " shift.", "ATTENDANCE", "MEDIUM"));
+        eventPublisher.publishEvent(new NotificationEvent(this, "admin", "Agent Checked Out", "Agent " + agentName + " (" + agentId + ") checked out at " + now.toLocalTime().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a")) + ".", "ATTENDANCE", "LOW"));
 
         return saved;
     }

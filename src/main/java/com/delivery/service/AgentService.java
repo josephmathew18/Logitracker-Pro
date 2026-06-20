@@ -10,6 +10,8 @@ import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
+import com.delivery.event.NotificationEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
@@ -42,6 +44,7 @@ public class AgentService {
     private final AttendanceRepository attendanceRepository;
     private final PasswordEncoder passwordEncoder;
     private final SessionRegistry sessionRegistry;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${upload.profile.dir:uploads/profile-images}")
     private String profileUploadDir;
@@ -54,7 +57,8 @@ public class AgentService {
                         AgentVehicleHistoryRepository agentVehicleHistoryRepository,
                         PasswordEncoder passwordEncoder, SessionRegistry sessionRegistry,
                         LeaveApplicationRepository leaveApplicationRepository,
-                        AttendanceRepository attendanceRepository) {
+                        AttendanceRepository attendanceRepository,
+                        ApplicationEventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.agentRepository = agentRepository;
         this.vehicleRepository = vehicleRepository;
@@ -67,6 +71,7 @@ public class AgentService {
         this.sessionRegistry = sessionRegistry;
         this.leaveApplicationRepository = leaveApplicationRepository;
         this.attendanceRepository = attendanceRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -94,6 +99,7 @@ public class AgentService {
         agent.setJoiningDate(LocalDateTime.now());
 
         Agent savedAgent = agentRepository.save(agent);
+        eventPublisher.publishEvent(new NotificationEvent(this, "admin", "Agent Registered", "New agent " + name + " (ID: " + agentId + ") has registered.", "AGENT", "HIGH"));
 
         // Record audit log
         String adminName = "SYSTEM";
@@ -134,6 +140,14 @@ public class AgentService {
         }
         userRepository.save(user);
         agentRepository.save(agent);
+ 
+        if (newStatus == AgentStatus.ACTIVE) {
+            eventPublisher.publishEvent(new NotificationEvent(this, agent.getUser().getUsername(), "Agent Activated", "Your agent account has been activated. You can now start taking shipments.", "AGENT", "HIGH"));
+        } else if (newStatus == AgentStatus.SUSPENDED) {
+            eventPublisher.publishEvent(new NotificationEvent(this, agent.getUser().getUsername(), "Agent Account Suspended", "Your agent account has been suspended by the administrator. Remarks: " + remarks, "AGENT", "HIGH"));
+        } else if (newStatus == AgentStatus.INACTIVE) {
+            eventPublisher.publishEvent(new NotificationEvent(this, agent.getUser().getUsername(), "Agent Account Deactivated", "Your agent account has been deactivated.", "AGENT", "HIGH"));
+        }
 
         // Record audit log
         String adminName = "SYSTEM";
@@ -211,6 +225,7 @@ public class AgentService {
         }
 
         agentRepository.save(agent);
+        eventPublisher.publishEvent(new NotificationEvent(this, agent.getUser().getUsername(), "Agent Terminated", "Your agent contract has been terminated. Reason: " + reason, "AGENT", "HIGH"));
 
         // 3. Record audit log
         String adminName = "SYSTEM";
@@ -275,6 +290,8 @@ public class AgentService {
                 agentRepository.save(otherAgent);
             }
 
+            boolean isChange = agent.getVehicle() != null;
+
             // 2. Unassign previous vehicle if this agent already had one
             if (agent.getVehicle() != null) {
                 closeActiveVehicleHistory(agent.getId());
@@ -298,6 +315,26 @@ public class AgentService {
 
             AgentVehicleHistory history = new AgentVehicleHistory(agentId, vehicleId, vehicle.getVehicleNumber(), LocalDateTime.now(), adminName);
             agentVehicleHistoryRepository.save(history);
+
+            if (isChange) {
+                eventPublisher.publishEvent(new NotificationEvent(
+                    this,
+                    agent.getUser().getUsername(),
+                    "Vehicle Allocation Changed",
+                    "Your vehicle assignment has been changed to " + vehicle.getVehicleNumber() + " (" + vehicle.getModel() + ").",
+                    "VEHICLE",
+                    "MEDIUM"
+                ));
+            } else {
+                eventPublisher.publishEvent(new NotificationEvent(
+                    this,
+                    agent.getUser().getUsername(),
+                    "Vehicle Assigned",
+                    "Vehicle " + vehicle.getVehicleNumber() + " (" + vehicle.getModel() + ") has been assigned to you.",
+                    "VEHICLE",
+                    "MEDIUM"
+                ));
+            }
         }
     }
 
@@ -312,6 +349,15 @@ public class AgentService {
             vehicleRepository.save(vehicle);
             agent.setVehicle(null);
             agentRepository.save(agent);
+
+            eventPublisher.publishEvent(new NotificationEvent(
+                this,
+                agent.getUser().getUsername(),
+                "Vehicle Unassigned",
+                "Vehicle " + vehicle.getVehicleNumber() + " has been unallocated from your profile.",
+                "VEHICLE",
+                "MEDIUM"
+            ));
         }
     }
 
@@ -404,6 +450,15 @@ public class AgentService {
 
         // Activity Log
         logActivity(agentId, "Password Changed", ipAddress);
+
+        eventPublisher.publishEvent(new NotificationEvent(
+            this,
+            agent.getUser().getUsername(),
+            "Password Changed",
+            "Your password has been changed successfully.",
+            "SYSTEM",
+            "HIGH"
+        ));
     }
 
     public Agent verifyAgentForReset(String agentId, String phoneNumber) {
@@ -478,6 +533,15 @@ public class AgentService {
 
         // Activity Log
         logActivity(agentId, "Password Changed", ipAddress);
+
+        eventPublisher.publishEvent(new NotificationEvent(
+            this,
+            agent.getUser().getUsername(),
+            "Password Reset Successful",
+            "Your password has been successfully reset.",
+            "SYSTEM",
+            "HIGH"
+        ));
     }
 
     public void logActivity(String agentId, String action, String ipAddress) {

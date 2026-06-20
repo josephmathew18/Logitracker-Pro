@@ -78,4 +78,38 @@ public class NotificationService {
             notificationRepository.save(n);
         }
     }
+
+    @Transactional
+    public Notification createNotification(User recipient, String role, String title, String message, String type, String priority) {
+        Notification notification = new Notification(recipient, role, title, message, type, priority);
+        return notificationRepository.save(notification);
+    }
+
+    @Transactional
+    public void deleteNotification(Integer id) {
+        notificationRepository.deleteById(id);
+    }
+
+    public List<Notification> searchAndFilterNotifications(String username, String search, String typeFilter, String priorityFilter) {
+        List<Notification> list = getNotificationsForUser(username);
+        
+        return list.stream()
+                .filter(n -> {
+                    if (search == null || search.trim().isEmpty()) return true;
+                    String term = search.toLowerCase();
+                    return n.getTitle().toLowerCase().contains(term) || n.getMessage().toLowerCase().contains(term);
+                })
+                .filter(n -> {
+                    if (typeFilter == null || typeFilter.trim().isEmpty()) return true;
+                    if ("unread".equalsIgnoreCase(typeFilter)) {
+                        return !n.isRead();
+                    }
+                    return n.getType().equalsIgnoreCase(typeFilter);
+                })
+                .filter(n -> {
+                    if (priorityFilter == null || priorityFilter.trim().isEmpty()) return true;
+                    return n.getPriority().equalsIgnoreCase(priorityFilter);
+                })
+                .collect(java.util.stream.Collectors.toList());
+    }
 }

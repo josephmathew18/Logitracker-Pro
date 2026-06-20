@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
+import com.delivery.event.NotificationEvent;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -22,19 +24,22 @@ public class CancellationRefundService {
     private final PaymentRepository paymentRepository;
     private final DeliveryRepository deliveryRepository;
     private final com.razorpay.RazorpayClient razorpayClient;
+    private final ApplicationEventPublisher eventPublisher;
 
     public CancellationRefundService(OrderRepository orderRepository,
                                      OrderCancellationRepository orderCancellationRepository,
                                      RefundRepository refundRepository,
                                      PaymentRepository paymentRepository,
                                      DeliveryRepository deliveryRepository,
-                                     com.razorpay.RazorpayClient razorpayClient) {
+                                     com.razorpay.RazorpayClient razorpayClient,
+                                     ApplicationEventPublisher eventPublisher) {
         this.orderRepository = orderRepository;
         this.orderCancellationRepository = orderCancellationRepository;
         this.refundRepository = refundRepository;
         this.paymentRepository = paymentRepository;
         this.deliveryRepository = deliveryRepository;
         this.razorpayClient = razorpayClient;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -141,6 +146,28 @@ public class CancellationRefundService {
             System.out.println("   Refund of ₹" + refundAmt + " has been initiated. Status: " + refundStatus + ". Transaction ID: " + rzpRefundId);
         }
 
+        eventPublisher.publishEvent(new NotificationEvent(
+            this,
+            order.getCustomer().getUser().getUsername(),
+            "Order Cancelled",
+            "Your order #" + orderId + " has been successfully cancelled.",
+            "DELIVERY",
+            "MEDIUM"
+        ));
+        
+        if (payment != null) {
+            String title = "REFUNDED".equalsIgnoreCase(refundStatus) ? "Refund Completed" : "Refund Requested";
+            String msg = "A refund of ₹" + refundAmt + " for order #" + orderId + " has been " + ("REFUNDED".equalsIgnoreCase(refundStatus) ? "processed successfully." : "submitted for approval.");
+            eventPublisher.publishEvent(new NotificationEvent(
+                this,
+                order.getCustomer().getUser().getUsername(),
+                title,
+                msg,
+                "PAYMENT",
+                "HIGH"
+            ));
+        }
+
         return cancellation;
     }
 
@@ -172,6 +199,15 @@ public class CancellationRefundService {
         }
 
         System.out.println("NOTIFICATION [SMS/Email] to customer " + refund.getCustomer().getName() + ": Refund of ₹" + refund.getRefundAmount() + " approved successfully.");
+
+        eventPublisher.publishEvent(new NotificationEvent(
+            this,
+            refund.getCustomer().getUser().getUsername(),
+            "Refund Completed",
+            "Your manual refund request of ₹" + refund.getRefundAmount() + " for order #" + refund.getOrder().getOrderId() + " has been approved.",
+            "PAYMENT",
+            "HIGH"
+        ));
     }
 
     /**
@@ -199,6 +235,15 @@ public class CancellationRefundService {
         }
 
         System.out.println("NOTIFICATION [SMS/Email] to customer " + refund.getCustomer().getName() + ": Refund request has been REJECTED by Admin.");
+
+        eventPublisher.publishEvent(new NotificationEvent(
+            this,
+            refund.getCustomer().getUser().getUsername(),
+            "Refund Rejected",
+            "Your manual refund request of ₹" + refund.getRefundAmount() + " for order #" + refund.getOrder().getOrderId() + " has been rejected.",
+            "PAYMENT",
+            "HIGH"
+        ));
     }
 
     public List<OrderCancellation> getCancellationsByCustomer(String username) {

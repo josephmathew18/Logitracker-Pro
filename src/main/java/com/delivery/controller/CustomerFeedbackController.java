@@ -2,8 +2,10 @@ package com.delivery.controller;
 
 import com.delivery.model.Feedback;
 import com.delivery.service.FeedbackService;
+import com.delivery.event.NotificationEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,9 +21,11 @@ public class CustomerFeedbackController {
     private static final Logger logger = LoggerFactory.getLogger(CustomerFeedbackController.class);
 
     private final FeedbackService feedbackService;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public CustomerFeedbackController(FeedbackService feedbackService) {
+    public CustomerFeedbackController(FeedbackService feedbackService, ApplicationEventPublisher eventPublisher) {
         this.feedbackService = feedbackService;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -57,12 +61,16 @@ public class CustomerFeedbackController {
 
         try {
             if (feedbackId != null) {
-                // Editing existing feedback (must be within 24 hours)
                 feedbackService.updateFeedback(feedbackId, rating, category, comments);
+                eventPublisher.publishEvent(new NotificationEvent(this, "admin", "Feedback Updated", "Feedback edited by customer " + username + ".", "CUSTOMER", "LOW"));
                 redirectAttributes.addFlashAttribute("successMessage", "Feedback updated successfully!");
             } else if (orderId != null) {
-                // Submitting new feedback
                 feedbackService.submitFeedback(orderId, username, rating, category, comments);
+                if ("COMPLAINT".equalsIgnoreCase(category)) {
+                    eventPublisher.publishEvent(new NotificationEvent(this, "admin", "Complaint Submitted", "A new complaint has been submitted by customer " + username + " under category " + category + ".", "CUSTOMER", "HIGH"));
+                } else {
+                    eventPublisher.publishEvent(new NotificationEvent(this, "admin", "Feedback Submitted", "New feedback submitted by customer " + username + ".", "CUSTOMER", "MEDIUM"));
+                }
                 redirectAttributes.addFlashAttribute("successMessage", "Thank you for your feedback!");
             } else {
                 throw new IllegalArgumentException("Either Order ID or Feedback ID must be provided.");

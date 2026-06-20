@@ -129,31 +129,74 @@
             <div class="content-body">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2 class="app-page-title mb-0">Alert Notifications</h2>
-                    <button th:if="${not #lists.isEmpty(notifications)}" class="btn btn-outline-primary rounded-pill px-4" onclick="markAllNotificationsRead()">
+                    <button th:if="${not #lists.isEmpty(notifications) || search != null || typeFilter != null}" class="btn btn-outline-primary rounded-pill px-4" onclick="markAllNotificationsRead()">
                         <i class="bi bi-check2-all me-1"></i>Mark All as Read
                     </button>
                 </div>
 
+                <!-- Filtering and Search Bar -->
+                <div class="row g-3 align-items-center mb-4">
+                    <div class="col-lg-8">
+                        <ul class="nav nav-pills gap-2 flex-wrap">
+                            <li class="nav-item">
+                                <a class="nav-link rounded-pill px-3 py-2 text-decoration-none" th:classappend="${typeFilter == null || typeFilter == ''} ? 'active bg-primary text-white' : 'bg-light text-dark'" th:href="@{/notifications(search=${search}, priority=${priorityFilter})}">All</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link rounded-pill px-3 py-2 text-decoration-none" th:classappend="${typeFilter == 'unread'} ? 'active bg-primary text-white' : 'bg-light text-dark'" th:href="@{/notifications(type='unread', search=${search}, priority=${priorityFilter})}">Unread</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link rounded-pill px-3 py-2 text-decoration-none" th:classappend="${typeFilter == 'SYSTEM'} ? 'active bg-primary text-white' : 'bg-light text-dark'" th:href="@{/notifications(type='SYSTEM', search=${search}, priority=${priorityFilter})}">System</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link rounded-pill px-3 py-2 text-decoration-none" th:classappend="${typeFilter == 'DELIVERY'} ? 'active bg-primary text-white' : 'bg-light text-dark'" th:href="@{/notifications(type='DELIVERY', search=${search}, priority=${priorityFilter})}">Delivery</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link rounded-pill px-3 py-2 text-decoration-none" th:classappend="${typeFilter == 'FINANCIAL'} ? 'active bg-primary text-white' : 'bg-light text-dark'" th:href="@{/notifications(type='FINANCIAL', search=${search}, priority=${priorityFilter})}">Financial</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-lg-4">
+                        <form method="GET" th:action="@{/notifications}">
+                            <input type="hidden" name="type" th:value="${typeFilter}" />
+                            <input type="hidden" name="priority" th:value="${priorityFilter}" />
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0 rounded-start-pill"><i class="bi bi-search text-muted"></i></span>
+                                <input type="text" name="search" th:value="${search}" class="form-control border-start-0 rounded-end-pill" placeholder="Search notifications...">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <!-- Notifications Grid / List -->
-                <div class="card custom-card p-4 bg-white">
+                <div class="card custom-card p-4 bg-white shadow-sm border-0 rounded-3">
                     <div th:if="${#lists.isEmpty(notifications)}" class="text-center py-5 text-muted">
-                        <i class="bi bi-bell-slash fs-1 d-block mb-3"></i>
-                        <p class="mb-0">You have no notifications yet.</p>
+                        <i class="bi bi-bell-slash fs-1 d-block mb-3 text-secondary opacity-50"></i>
+                        <p class="mb-0">No matching notifications found.</p>
                     </div>
 
                     <div th:if="${not #lists.isEmpty(notifications)}" class="d-flex flex-column gap-3">
                         <div th:each="n : ${notifications}" class="card p-3 border rounded-3 notif-card-item" th:classappend="${n.isRead ? '' : 'unread'}" th:id="${'notif-card-' + n.id}">
                             <div class="d-flex gap-3 align-items-start">
                                 <!-- Type Aware Icon -->
-                                <div class="notif-type-icon" th:classappend="${n.type == 'ALERT' || n.type == 'FAIL' ? 'notif-type-alert' : (n.type == 'SUCCESS' ? 'notif-type-success' : (n.type == 'SALARY' ? 'notif-type-salary' : 'notif-type-general'))}">
-                                    <i th:class="${n.type == 'ALERT' || n.type == 'FAIL' ? 'bi bi-exclamation-triangle-fill' : (n.type == 'SUCCESS' ? 'bi bi-check-circle-fill' : (n.type == 'SALARY' ? 'bi bi-wallet2' : 'bi bi-info-circle-fill'))}"></i>
+                                <div class="notif-type-icon" th:classappend="${n.priority == 'HIGH' || n.type == 'ALERT' || n.type == 'FAIL' ? 'notif-type-alert' : (n.type == 'SUCCESS' ? 'notif-type-success' : (n.type == 'SALARY' || n.type == 'FINANCIAL' ? 'notif-type-salary' : 'notif-type-general'))}">
+                                    <i th:class="${n.priority == 'HIGH' || n.type == 'ALERT' || n.type == 'FAIL' ? 'bi bi-exclamation-triangle-fill' : (n.type == 'SUCCESS' ? 'bi bi-check-circle-fill' : (n.type == 'SALARY' || n.type == 'FINANCIAL' ? 'bi bi-wallet2' : 'bi bi-info-circle-fill'))}"></i>
                                 </div>
                                 <div class="w-100">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <h6 class="font-weight-bold text-dark mb-1" th:text="${n.title}">Notification Title</h6>
-                                        <span class="small text-muted" th:text="${#temporals.format(n.createdAt, 'yyyy-MM-dd HH:mm')}">Date</span>
+                                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                        <div>
+                                            <h6 class="font-weight-bold text-dark mb-1" th:text="${n.title}">Notification Title</h6>
+                                            <span th:if="${n.priority == 'HIGH'}" class="badge bg-danger rounded-pill me-1 small">High Priority</span>
+                                            <span th:if="${n.priority == 'MEDIUM'}" class="badge bg-warning text-dark rounded-pill me-1 small">Medium Priority</span>
+                                            <span class="badge bg-secondary rounded-pill me-1 small" th:text="${n.type}">Type</span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <span class="small text-muted" th:text="${#temporals.format(n.createdAt, 'yyyy-MM-dd HH:mm')}">Date</span>
+                                            <button class="btn btn-link text-danger p-0 border-0" th:onclick="'deleteCard(' + ${n.id} + ')'" title="Delete Notification">
+                                                <i class="bi bi-trash3-fill"></i>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <p class="text-secondary small mb-2" th:text="${n.message}">Notification Message Content...</p>
+                                    <p class="text-secondary small mt-2 mb-2" th:text="${n.message}">Notification Message Content...</p>
                                     <button th:if="${!n.isRead}" class="btn btn-sm btn-light border py-1 px-3 rounded-pill font-weight-medium" th:onclick="'markCardRead(' + ${n.id} + ')'">
                                         <i class="bi bi-check2 me-1 text-primary"></i>Mark Read
                                     </button>
@@ -185,6 +228,24 @@
                     }
                 })
                 .catch(err => console.error("Error marking notification as read:", err));
+        }
+
+        function deleteCard(id) {
+            if (confirm("Are you sure you want to delete this notification?")) {
+                fetch('/api/notifications/delete/' + id, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            const card = document.getElementById('notif-card-' + id);
+                            if (card) {
+                                card.remove();
+                            }
+                            // Trigger reload count in header
+                            if (window.loadNotifications) window.loadNotifications();
+                        }
+                    })
+                    .catch(err => console.error("Error deleting notification:", err));
+            }
         }
 
         function markAllNotificationsRead() {

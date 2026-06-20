@@ -6,6 +6,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -19,13 +20,20 @@ public class NotificationViewController {
     }
 
     @GetMapping("/notifications")
-    public String viewNotifications(Authentication authentication, Model model) {
+    public String viewNotifications(Authentication authentication,
+                                    @RequestParam(value = "search", required = false) String search,
+                                    @RequestParam(value = "type", required = false) String type,
+                                    @RequestParam(value = "priority", required = false) String priority,
+                                    Model model) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return "redirect:/login";
         }
         String username = authentication.getName();
-        List<Notification> list = notificationService.getNotificationsForUser(username);
+        List<Notification> list = notificationService.searchAndFilterNotifications(username, search, type, priority);
         model.addAttribute("notifications", list);
+        model.addAttribute("search", search);
+        model.addAttribute("typeFilter", type);
+        model.addAttribute("priorityFilter", priority);
         return "notifications";
     }
 }

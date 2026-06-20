@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.context.ApplicationEventPublisher;
+import com.delivery.event.NotificationEvent;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,13 +29,16 @@ public class ExpenseService {
 
     private final FuelExpenseRepository fuelExpenseRepository;
     private final AgentRepository agentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${upload.dir}")
     private String uploadDir;
 
-    public ExpenseService(FuelExpenseRepository fuelExpenseRepository, AgentRepository agentRepository) {
+    public ExpenseService(FuelExpenseRepository fuelExpenseRepository, AgentRepository agentRepository,
+                          ApplicationEventPublisher eventPublisher) {
         this.fuelExpenseRepository = fuelExpenseRepository;
         this.agentRepository = agentRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -82,7 +87,19 @@ public class ExpenseService {
         expense.setTotal(total);
         expense.setBillImagePath(savedFilePath);
 
-        return fuelExpenseRepository.save(expense);
+        FuelExpense saved = fuelExpenseRepository.save(expense);
+
+        // Publish NotificationEvent (Automatically duplicated to admin)
+        eventPublisher.publishEvent(new NotificationEvent(
+            this,
+            agent.getUser().getUsername(),
+            "Fuel Expense Claim Submitted",
+            "Your fuel expense claim of ₹" + total + " for " + quantity + " Litres has been logged successfully.",
+            "FINANCIAL",
+            "MEDIUM"
+        ));
+
+        return saved;
     }
 
     public List<FuelExpense> getExpensesByAgent(String username) {

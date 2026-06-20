@@ -6,6 +6,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
+import com.delivery.event.NotificationEvent;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,16 +26,19 @@ public class SalaryService {
     private final AgentAuditLogRepository agentAuditLogRepository;
     private final com.razorpay.RazorpayClient razorpayClient;
     private final SalaryPaymentRepository salaryPaymentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public SalaryService(SalaryRepository salaryRepository, AgentRepository agentRepository, 
                          DeliveryService deliveryService, AgentAuditLogRepository agentAuditLogRepository,
-                         com.razorpay.RazorpayClient razorpayClient, SalaryPaymentRepository salaryPaymentRepository) {
+                         com.razorpay.RazorpayClient razorpayClient, SalaryPaymentRepository salaryPaymentRepository,
+                         ApplicationEventPublisher eventPublisher) {
         this.salaryRepository = salaryRepository;
         this.agentRepository = agentRepository;
         this.deliveryService = deliveryService;
         this.agentAuditLogRepository = agentAuditLogRepository;
         this.razorpayClient = razorpayClient;
         this.salaryPaymentRepository = salaryPaymentRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     public BigDecimal calculateIncentive(Agent agent, String month, int year) {
@@ -80,6 +85,16 @@ public class SalaryService {
         AgentAuditLog log = new AgentAuditLog(agentId, "Salary Generated", adminName, "Salary generated for " + month + " " + year + ". Net: " + netSalary);
         agentAuditLogRepository.save(log);
 
+        // Notify Agent (Automatically duplicated to admin)
+        eventPublisher.publishEvent(new NotificationEvent(
+            this,
+            agent.getUser().getUsername(),
+            "Salary Slip Generated",
+            "Your salary slip for " + month + " " + year + " has been generated. Net: ₹" + netSalary,
+            "FINANCIAL",
+            "MEDIUM"
+        ));
+
         return saved;
     }
 
@@ -104,6 +119,16 @@ public class SalaryService {
         }
         AgentAuditLog log = new AgentAuditLog(salary.getAgent().getId(), "Salary Paid", adminName, "Salary paid for " + salary.getMonth() + " " + salary.getYear());
         agentAuditLogRepository.save(log);
+
+        // Notify Agent
+        eventPublisher.publishEvent(new NotificationEvent(
+            this,
+            salary.getAgent().getUser().getUsername(),
+            "Salary Approved",
+            "Your salary payout of ₹" + salary.getNetSalary() + " for " + salary.getMonth() + " " + salary.getYear() + " has been approved and marked as paid.",
+            "FINANCIAL",
+            "HIGH"
+        ));
     }
 
     @Transactional
@@ -213,6 +238,16 @@ public class SalaryService {
             AgentAuditLog log = new AgentAuditLog(salary.getAgent().getId(), "Salary Paid", adminName, 
                     "Salary paid via Razorpay for " + salary.getMonth() + " " + salary.getYear() + ". TransId: " + paymentId);
             agentAuditLogRepository.save(log);
+
+            // Notify Agent on Successful Credited
+            eventPublisher.publishEvent(new NotificationEvent(
+                this,
+                salary.getAgent().getUser().getUsername(),
+                "Salary Credited",
+                "Your salary of ₹" + salary.getNetSalary() + " for " + salary.getMonth() + " " + salary.getYear() + " has been credited. TransID: " + (paymentId != null ? paymentId : paymentLinkId),
+                "FINANCIAL",
+                "HIGH"
+            ));
         } else {
             salary.setPaymentStatus("FAILED");
             salaryRepository.save(salary);
@@ -220,6 +255,16 @@ public class SalaryService {
             sp.setPaymentStatus("FAILED");
             sp.setTransactionId(paymentId);
             salaryPaymentRepository.save(sp);
+
+            // Notify Agent on Failure
+            eventPublisher.publishEvent(new NotificationEvent(
+                this,
+                salary.getAgent().getUser().getUsername(),
+                "Salary Payment Failed",
+                "Your salary payout of ₹" + salary.getNetSalary() + " for " + salary.getMonth() + " " + salary.getYear() + " has failed.",
+                "FINANCIAL",
+                "HIGH"
+            ));
         }
     }
 
@@ -248,6 +293,16 @@ public class SalaryService {
         AgentAuditLog log = new AgentAuditLog(salary.getAgent().getId(), "Salary Paid", adminName, 
                 "Salary paid via " + method + " for " + salary.getMonth() + " " + salary.getYear() + ". TransId: " + transactionId);
         agentAuditLogRepository.save(log);
+
+        // Notify Agent on Successful Credited
+        eventPublisher.publishEvent(new NotificationEvent(
+            this,
+            salary.getAgent().getUser().getUsername(),
+            "Salary Credited",
+            "Your salary of ₹" + salary.getNetSalary() + " for " + salary.getMonth() + " " + salary.getYear() + " has been credited via " + method + ". TransId: " + transactionId,
+            "FINANCIAL",
+            "HIGH"
+        ));
     }
 
     public List<Salary> getSalaryHistoryByAgent(String agentId) {

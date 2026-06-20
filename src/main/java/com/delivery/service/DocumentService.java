@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.context.ApplicationEventPublisher;
+import com.delivery.event.NotificationEvent;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,16 +29,19 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final AgentRepository agentRepository;
     private final VehicleRepository vehicleRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${upload.document.dir:uploads/documents}")
     private String docUploadDir;
 
     public DocumentService(DocumentRepository documentRepository,
                            AgentRepository agentRepository,
-                           VehicleRepository vehicleRepository) {
+                           VehicleRepository vehicleRepository,
+                           ApplicationEventPublisher eventPublisher) {
         this.documentRepository = documentRepository;
         this.agentRepository = agentRepository;
         this.vehicleRepository = vehicleRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -78,7 +83,24 @@ public class DocumentService {
         document.setExpiryDate(expiryDate);
         document.setVerificationStatus("PENDING");
 
-        return documentRepository.save(document);
+        Document saved = documentRepository.save(document);
+
+        String recipient = "admin";
+        if (agent != null) {
+            recipient = agent.getUser().getUsername();
+        } else if (vehicle != null && vehicle.getAgent() != null) {
+            recipient = vehicle.getAgent().getUser().getUsername();
+        }
+        eventPublisher.publishEvent(new NotificationEvent(
+            this,
+            recipient,
+            "Document Uploaded",
+            "Document of type " + documentType + " (" + originalFilename + ") has been uploaded and is pending verification.",
+            "DOCUMENT",
+            "MEDIUM"
+        ));
+
+        return saved;
     }
 
     @Transactional
@@ -88,7 +110,26 @@ public class DocumentService {
 
         doc.setVerificationStatus(status);
         doc.setRemarks(remarks);
-        return documentRepository.save(doc);
+        Document saved = documentRepository.save(doc);
+
+        String recipient = "admin";
+        if (doc.getAgent() != null) {
+            recipient = doc.getAgent().getUser().getUsername();
+        } else if (doc.getVehicle() != null && doc.getVehicle().getAgent() != null) {
+            recipient = doc.getVehicle().getAgent().getUser().getUsername();
+        }
+
+        String priority = "APPROVED".equalsIgnoreCase(status) ? "MEDIUM" : "HIGH";
+        eventPublisher.publishEvent(new NotificationEvent(
+            this,
+            recipient,
+            "Document Verification: " + status,
+            "Your document of type " + doc.getDocumentType() + " has been " + status.toLowerCase() + ". Remarks: " + (remarks != null ? remarks : "N/A"),
+            "DOCUMENT",
+            priority
+        ));
+
+        return saved;
     }
 
     public List<Document> getAgentDocuments(String agentId) {

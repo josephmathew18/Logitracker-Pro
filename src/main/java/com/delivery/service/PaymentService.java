@@ -4,6 +4,8 @@ import com.delivery.model.*;
 import com.delivery.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
+import com.delivery.event.NotificationEvent;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,6 +26,7 @@ public class PaymentService {
     private final SalaryRepository salaryRepository;
     private final FuelExpenseRepository fuelExpenseRepository;
     private final com.razorpay.RazorpayClient razorpayClient;
+    private final ApplicationEventPublisher eventPublisher;
 
     @org.springframework.beans.factory.annotation.Value("${razorpay.key.id}")
     private String keyId;
@@ -34,7 +37,7 @@ public class PaymentService {
     public PaymentService(OrderRepository orderRepository, PaymentRepository paymentRepository, 
                           CustomerRepository customerRepository, DeliveryService deliveryService,
                           SalaryRepository salaryRepository, FuelExpenseRepository fuelExpenseRepository,
-                          com.razorpay.RazorpayClient razorpayClient) {
+                          com.razorpay.RazorpayClient razorpayClient, ApplicationEventPublisher eventPublisher) {
         this.orderRepository = orderRepository;
         this.paymentRepository = paymentRepository;
         this.customerRepository = customerRepository;
@@ -42,6 +45,7 @@ public class PaymentService {
         this.salaryRepository = salaryRepository;
         this.fuelExpenseRepository = fuelExpenseRepository;
         this.razorpayClient = razorpayClient;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -131,6 +135,17 @@ public class PaymentService {
 
         order.setPaymentStatus(orderPaymentStatus);
         orderRepository.save(order);
+
+        if (!"COD".equalsIgnoreCase(method)) {
+            eventPublisher.publishEvent(new NotificationEvent(
+                this,
+                order.getCustomer().getUser().getUsername(),
+                "Payment Successful",
+                "Payment of ₹" + order.getTotalPrice() + " for order #" + order.getOrderId() + " was successful. TransID: " + transactionId,
+                "PAYMENT",
+                "MEDIUM"
+            ));
+        }
 
         return savedPayment;
     }
@@ -250,6 +265,15 @@ public class PaymentService {
                 order.setPaymentStatus("PAID");
                 orderRepository.save(order);
 
+                eventPublisher.publishEvent(new NotificationEvent(
+                    this,
+                    order.getCustomer().getUser().getUsername(),
+                    "Payment Successful",
+                    "Payment of ₹" + order.getTotalPrice() + " for order #" + order.getOrderId() + " has been successfully verified via Razorpay.",
+                    "PAYMENT",
+                    "MEDIUM"
+                ));
+
                 return payment;
             } else {
                 payment.setPaymentStatus("FAILED");
@@ -258,6 +282,15 @@ public class PaymentService {
 
                 order.setPaymentStatus("FAILED");
                 orderRepository.save(order);
+
+                eventPublisher.publishEvent(new NotificationEvent(
+                    this,
+                    order.getCustomer().getUser().getUsername(),
+                    "Payment Failed",
+                    "Payment of ₹" + order.getTotalPrice() + " for order #" + order.getOrderId() + " failed: Signature verification failed.",
+                    "PAYMENT",
+                    "HIGH"
+                ));
 
                 throw new SecurityException("Payment signature verification failed");
             }
@@ -268,6 +301,15 @@ public class PaymentService {
 
             order.setPaymentStatus("FAILED");
             orderRepository.save(order);
+
+            eventPublisher.publishEvent(new NotificationEvent(
+                this,
+                order.getCustomer().getUser().getUsername(),
+                "Payment Failed",
+                "Payment of ₹" + order.getTotalPrice() + " for order #" + order.getOrderId() + " failed: " + (e.getMessage() != null ? e.getMessage() : "Unknown verification error"),
+                "PAYMENT",
+                "HIGH"
+            ));
 
             throw new RuntimeException("Razorpay signature verification exception: " + e.getMessage(), e);
         }
@@ -299,8 +341,6 @@ public class PaymentService {
                     order.setPaymentStatus("REFUNDED");
                     orderRepository.save(order);
                 }
-
-                return payment;
             } catch (com.razorpay.RazorpayException e) {
                 throw new RuntimeException("Error processing Razorpay refund: " + e.getMessage(), e);
             }
@@ -313,8 +353,18 @@ public class PaymentService {
                 order.setPaymentStatus("REFUNDED");
                 orderRepository.save(order);
             }
-            return payment;
         }
+
+        eventPublisher.publishEvent(new NotificationEvent(
+            this,
+            payment.getCustomer().getUser().getUsername(),
+            "Refund Completed",
+            "A refund of ₹" + payment.getAmount() + " for order #" + (payment.getOrder() != null ? payment.getOrder().getOrderId() : "N/A") + " has been processed successfully.",
+            "PAYMENT",
+            "HIGH"
+        ));
+
+        return payment;
     }
 
 
