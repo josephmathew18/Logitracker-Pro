@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard - Delivery Service Provider Management System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck-flatbed me-2"></i>LogiTrack<span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/customer/dashboard}" class="sidebar-item active"><i class="bi bi-grid-fill"></i>Client Dashboard</a>
+                <a th:href="@{/customer/orders}" class="sidebar-item "><i class="bi bi-cart-plus-fill"></i>Create Delivery Order</a>
+                <a th:href="@{/customer/payments}" class="sidebar-item "><i class="bi bi-credit-card-2-front"></i>Transactions</a>
+                <a th:href="@{/customer/cancellations}" class="sidebar-item "><i class="bi bi-x-octagon-fill"></i>Cancellations</a>
+                <a th:href="@{/customer/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>My Feedback</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Customer Portal')}"></div>
+
+            <div class="content-body">
+                <!-- Notifications -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- Customer Details and Call-to-Action Banner -->
+                <div class="row g-4 mb-4">
+                    <!-- Profile Card -->
+                    <div class="col-lg-8">
+                        <div class="card custom-card p-4 h-100 bg-white">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-person-vcard text-primary me-2"></i>Contact Information</h5>
+                            <div class="row text-secondary">
+                                <div class="col-md-6 mb-2">
+                                    <strong>Email:</strong> <span th:text="${customer.email}">customer@example.com</span>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <strong>Phone:</strong> <span th:text="${customer.phone}">9876543210</span>
+                                </div>
+                                <div class="col-12 mb-2">
+                                    <strong>Registered Billing Address:</strong> <span th:text="${customer.address}">Address details...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Booking CTA Card -->
+                    <div class="col-lg-4">
+                        <div class="card custom-card p-4 h-100 bg-dark text-white text-center justify-content-center">
+                            <h5 class="mb-2">Need a delivery?</h5>
+                            <p class="small text-muted mb-3">Book and track package requests in seconds.</p>
+                            <a th:href="@{/customer/orders}" class="btn btn-primary-custom py-2"><i class="bi bi-plus-lg me-2"></i>Book Shipment</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Booking History Table -->
+                <div class="card custom-card p-4">
+                    <h5 class="font-weight-bold mb-3">Package Shipment Ledger</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Package Info</th>
+                                    <th>Pickup Location</th>
+                                    <th>Delivery Destination</th>
+                                    <th>Assigned Driver</th>
+                                    <th>Est. Cost</th>
+                                    <th>Status</th>
+                                    <th>Tracking & Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="delivery : ${deliveries}">
+                                    <td class="font-weight-bold" th:text="${'#DEL-' + delivery.id}">#DEL-101</td>
+                                    <td th:text="${delivery.packageDetails}">Package info</td>
+                                    <td th:text="${delivery.pickupAddress}">Pickup location</td>
+                                    <td th:text="${delivery.deliveryAddress}">Destination</td>
+                                    <td>
+                                        <div th:if="${delivery.agent != null}">
+                                            <span class="font-weight-medium" th:text="${delivery.agent?.name}">Driver Name</span><br>
+                                            <small class="text-muted" th:text="${'Phone: ' + (delivery.agent?.phone != null ? delivery.agent.phone : '')}"></small>
+                                        </div>
+                                        <span th:if="${delivery.agent == null}" class="text-muted small">Awaiting Allocation</span>
+                                    </td>
+                                    <td class="font-weight-bold text-dark" th:text="${'£' + delivery.totalCost}">£0.00</td>
+                                    <td>
+                                        <span class="badge badge-pill-custom" 
+                                              th:classappend="${#strings.toLowerCase(delivery.status) == 'pending' ? 'badge-pending' : 
+                                                                #strings.toLowerCase(delivery.status) == 'assigned' ? 'badge-assigned' : 
+                                                                #strings.toLowerCase(delivery.status) == 'picked_up' ? 'badge-pickedup' : 
+                                                                #strings.toLowerCase(delivery.status) == 'in_transit' ? 'badge-intransit' : 
+                                                                #strings.toLowerCase(delivery.status) == 'delivered' ? 'badge-delivered' : 
+                                                                #strings.toLowerCase(delivery.status) == 'cancelled' ? 'badge-rejected' : 'badge-rejected'}"
+                                              th:text="${delivery.status}">Pending</span>
+                                    </td>
+                                    <td>
+                                        <!-- Track Button if active -->
+                                        <a th:if="${delivery.status != 'PENDING' && delivery.status != 'REJECTED' && delivery.status != 'CANCELLED'}" 
+                                           th:href="@{/customer/track/{id}(id=${delivery.id})}" 
+                                           class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                            <i class="bi bi-geo-alt-fill me-1"></i>Track GPS
+                                        </a>
+
+                                        <!-- Cancel Delivery Button if PENDING, ASSIGNED, or PICKED_UP -->
+                                        <button th:if="${delivery.status == 'PENDING' || delivery.status == 'ASSIGNED' || delivery.status == 'PICKED_UP'}"
+                                                class="btn btn-sm btn-outline-danger rounded-pill px-3 ms-1"
+                                                data-bs-toggle="modal" 
+                                                th:data-bs-target="${'#cancelModal' + delivery.id}">
+                                            <i class="bi bi-x-circle me-1"></i>Cancel
+                                        </button>
+
+                                        <!-- Feedback Submit Button if Completed -->
+                                        <button th:if="${delivery.status == 'DELIVERED'}"
+                                                class="btn btn-sm btn-success rounded-pill px-3 ms-1"
+                                                data-bs-toggle="modal" 
+                                                th:data-bs-target="${'#feedbackModal' + delivery.id}">
+                                            <i class="bi bi-star-fill me-1"></i>Rate Service
+                                        </button>
+
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(deliveries)}">
+                                    <td colspan="8" class="text-center text-muted py-5">
+                                        <i class="bi bi-box2-fill fs-1 text-muted"></i>
+                                        <p class="mt-2 mb-0">No booking request histories found. Book one above!</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals for cancellations and feedback (placed outside of table elements to ensure correct rendering positioning) -->
+    <div th:each="delivery : ${deliveries}">
+        <!-- Cancel Modal -->
+        <div class="modal fade" th:id="${'cancelModal' + delivery.id}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content text-start" style="border-radius: 1rem;">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title font-weight-bold text-dark" th:text="${'Cancel Delivery #DEL-' + delivery.id}">Cancel Delivery</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form th:action="@{/customer/orders/cancel}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this delivery?')">
+                        <div class="modal-body pt-3">
+                            <input type="hidden" name="deliveryId" th:value="${delivery.id}">
+                            <div th:if="${delivery.status == 'PICKED_UP'}" class="alert alert-warning p-2 small border border-warning-subtle mb-3" style="background-color: #FFFBEB; color: #92400E; border-radius: 0.5rem;">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Cancellation Fee:</strong> This order has been picked up. A cancellation fee of ₹50.00 will be deducted from your refund.
+                            </div>
+                            <p class="text-secondary small mb-2">Please select a reason for cancelling this delivery request:</p>
+                            <div class="mb-3">
+                                <select class="form-select rounded-pill" name="reason" required>
+                                    <option value="Ordered by mistake">Ordered by mistake</option>
+                                    <option value="Wrong address entered">Wrong address entered</option>
+                                    <option value="Found a better option">Found a better option</option>
+                                    <option value="Delay in assignment">Delay in assignment</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal" style="font-size: 0.85rem; font-weight: 600;">Close</button>
+                            <button type="submit" class="btn btn-danger px-4 rounded-pill" style="font-size: 0.85rem; font-weight: 600;">Confirm Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feedback Modal -->
+        <div class="modal fade" th:id="${'feedbackModal' + delivery.id}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content text-start border-0 rounded-4 shadow-lg text-dark">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title font-weight-bold text-dark" th:text="${'Feedback for Delivery #DEL-' + delivery.id}">Submit Feedback</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form th:action="@{/customer/feedback}" method="POST">
+                        <input type="hidden" name="deliveryId" th:value="${delivery.id}">
+                        <div class="modal-body pt-3">
+                            <!-- Star Rating Dropdown -->
+                            <div class="mb-3">
+                                <label class="form-label font-weight-bold small text-muted">Service Rating</label>
+                                <select class="form-select rounded-pill" name="rating" required>
+                                    <option value="5">⭐⭐⭐⭐⭐ (5 - Excellent)</option>
+                                    <option value="4">⭐⭐⭐⭐ (4 - Very Good)</option>
+                                    <option value="3">⭐⭐⭐ (3 - Average)</option>
+                                    <option value="2">⭐⭐ (2 - Poor)</option>
+                                    <option value="1">⭐ (1 - Terrible)</option>
+                                </select>
+                            </div>
+                            <!-- Comments -->
+                            <div class="mb-3">
+                                <label class="form-label font-weight-bold small text-muted">Comments & Reviews</label>
+                                <textarea class="form-control rounded-4" name="comments" rows="3" placeholder="Tell us about the agent or the delivery..." required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal" style="font-size: 0.85rem; font-weight: 600;">Close</button>
+                            <button type="submit" class="btn btn-warning px-4 rounded-pill text-dark font-weight-bold" style="font-size: 0.85rem; font-weight: 600;">Submit Feedback</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

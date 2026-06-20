@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Delivery Order - LogiTrack Pro</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+    <!-- CSRF Meta Tags for AJAX / fetch requests -->
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    <!-- Razorpay Checkout Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        .step-indicator::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #e2e8f0;
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+        .step-item {
+            position: relative;
+            z-index: 2;
+            background-color: #fff;
+            padding: 0 10px;
+            color: #94a3b8;
+            font-weight: 500;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .step-item.active {
+            color: #0f172a;
+            font-weight: 700;
+        }
+        .step-item.completed {
+            color: #10b981;
+        }
+        .step-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            border: 2px solid #e2e8f0;
+        }
+        .step-item.active .step-num {
+            background-color: #0f172a;
+            color: #fff;
+            border-color: #0f172a;
+        }
+        .step-item.completed .step-num {
+            background-color: #10b981;
+            color: #fff;
+            border-color: #10b981;
+        }
+        .wizard-panel {
+            display: none;
+        }
+        .wizard-panel.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck-flatbed me-2"></i>LogiTrack<span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/customer/dashboard}" class="sidebar-item "><i class="bi bi-grid-fill"></i>Client Dashboard</a>
+                <a th:href="@{/customer/orders}" class="sidebar-item active"><i class="bi bi-cart-plus-fill"></i>Create Delivery Order</a>
+                <a th:href="@{/customer/payments}" class="sidebar-item "><i class="bi bi-credit-card-2-front"></i>Transactions</a>
+                <a th:href="@{/customer/cancellations}" class="sidebar-item "><i class="bi bi-x-octagon-fill"></i>Cancellations</a>
+                <a th:href="@{/customer/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>My Feedback</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Unified Delivery & Order Center')}"></div>
+
+            <div class="content-body">
+                <!-- Notifications -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <span class="app-overview-tag">Order Dispatch System</span>
+                <h2 class="app-page-title">Create Delivery Order</h2>
+
+                <div class="row g-4">
+                    <!-- Unified Order Wizard Form -->
+                    <div class="col-lg-8">
+                        <div class="card custom-card p-4 bg-white shadow-sm border-0 rounded-4">
+                            <!-- Step Indicator -->
+                            <div class="step-indicator">
+                                <div class="step-item active" id="indicator-1">
+                                    <span class="step-num">1</span> Delivery Details
+                                </div>
+                                <div class="step-item" id="indicator-2">
+                                    <span class="step-num">2</span> Product Details
+                                </div>
+                                <div class="step-item" id="indicator-3">
+                                    <span class="step-num">3</span> Payment Mode
+                                </div>
+                                <div class="step-item" id="indicator-4">
+                                    <span class="step-num">4</span> Confirmation
+                                </div>
+                            </div>
+
+                            <form id="wizardOrderForm" class="needs-validation" novalidate>
+                                <!-- STEP 1: DELIVERY DETAILS -->
+                                <div class="wizard-panel active" id="panel-1">
+                                    <h5 class="font-weight-bold mb-3 text-dark"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Step 1: Delivery Details</h5>
+                                    
+                                    <div class="mb-3">
+                                        <label for="pickupAddress" class="form-label font-weight-medium text-secondary">Pickup Address <span class="text-danger">*</span></label>
+                                        <textarea class="form-control" id="pickupAddress" name="pickupAddress" rows="2" placeholder="Full address where the agent should pick up the package..." required></textarea>
+                                        <div class="invalid-feedback">Please provide the pickup address.</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="deliveryAddress" class="form-label font-weight-medium text-secondary">Delivery Destination Address <span class="text-danger">*</span></label>
+                                        <textarea class="form-control" id="deliveryAddress" name="deliveryAddress" rows="2" placeholder="Full destination address where the package should be delivered..." required></textarea>
+                                        <div class="invalid-feedback">Please provide the destination address.</div>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="parcelDescription" class="form-label font-weight-medium text-secondary">Package Description <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control rounded-pill" id="parcelDescription" name="parcelDescription" placeholder="e.g. Courier documents, Laptop box, Clothes" required>
+                                            <div class="invalid-feedback">Please describe the package.</div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="packageType" class="form-label font-weight-medium text-secondary">Package Type <span class="text-danger">*</span></label>
+                                            <select class="form-select rounded-pill" id="packageType" name="packageType" required>
+                                                <option value="Document" selected>Document</option>
+                                                <option value="Parcel">Parcel</option>
+                                                <option value="Box">Box</option>
+                                                <option value="Fragile">Fragile</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                            <div class="invalid-feedback">Please select package type.</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="weightCategory" class="form-label font-weight-medium text-secondary">Weight Category <span class="text-danger">*</span></label>
+                                            <select class="form-select rounded-pill" id="weightCategory" required>
+                                                <option value="0-1" selected>0-1 kg (Light/Document)</option>
+                                                <option value="1-5">1-5 kg (Standard Parcel)</option>
+                                                <option value="5-10">5-10 kg (Medium Box)</option>
+                                                <option value="10-20">10-20 kg (Heavy Box)</option>
+                                                <option value="20+">20+ kg (Very Heavy)</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="parcelWeight" class="form-label font-weight-medium text-secondary">Est. Weight (kg) <span class="text-danger">*</span></label>
+                                            <input type="number" step="0.1" class="form-control rounded-pill" id="parcelWeight" name="parcelWeight" value="0.5" min="0.1" required>
+                                            <div class="invalid-feedback">Enter weight.</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-end mt-4">
+                                        <button type="button" class="btn btn-dark px-4 rounded-pill font-weight-bold" onclick="nextStep(2)">
+                                            Next Step <i class="bi bi-arrow-right ms-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- STEP 2: PRODUCT DETAILS -->
+                                <div class="wizard-panel" id="panel-2">
+                                    <h5 class="font-weight-bold mb-2 text-dark"><i class="bi bi-box-seam-fill text-primary me-2"></i>Step 2: Product Purchase Details</h5>
+                                    <p class="small text-muted mb-4">Optional: Fill this section if you are placing an order for a merchant product that needs payment checkout.</p>
+
+                                    <!-- Switch Toggle to Add Product -->
+                                    <div class="form-check form-switch mb-4 p-3 bg-light rounded-3">
+                                        <input class="form-check-input ms-0 me-2" type="checkbox" id="hasProductToggle" onchange="toggleProductFields()">
+                                        <label class="form-check-label font-weight-bold text-dark" for="hasProductToggle">Enable Product Purchase / Cod Checkout</label>
+                                    </div>
+
+                                    <div id="productFieldsWrapper" style="opacity: 0.5; pointer-events: none;">
+                                        <div class="row g-3 mb-3">
+                                            <div class="col-md-8">
+                                                <label for="productName" class="form-label font-weight-medium text-secondary">Product Name</label>
+                                                <input type="text" class="form-control rounded-pill" id="productName" name="productName" placeholder="e.g. Smart Watch, Running Shoes">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="productCategory" class="form-label font-weight-medium text-secondary">Category</label>
+                                                <select class="form-select rounded-pill" id="productCategory" name="productCategory">
+                                                    <option value="">-- Choose Category --</option>
+                                                    <option value="Electronics">Electronics</option>
+                                                    <option value="Clothing">Clothing</option>
+                                                    <option value="Groceries">Groceries</option>
+                                                    <option value="Documents">Documents</option>
+                                                    <option value="Books">Books</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="productPrice" class="form-label font-weight-medium text-secondary">Unit Price (₹)</label>
+                                                <input type="number" step="0.01" class="form-control rounded-pill" id="productPrice" name="productPrice" placeholder="0.00" value="0.00">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="quantity" class="form-label font-weight-medium text-secondary">Quantity</label>
+                                                <input type="number" class="form-control rounded-pill" id="quantity" name="quantity" value="1" min="1">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between mt-4">
+                                        <button type="button" class="btn btn-outline-secondary px-4 rounded-pill" onclick="prevStep(1)">
+                                            <i class="bi bi-arrow-left me-1"></i> Back
+                                        </button>
+                                        <button type="button" class="btn btn-dark px-4 rounded-pill font-weight-bold" onclick="nextStep(3)">
+                                            Next Step <i class="bi bi-arrow-right ms-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- STEP 3: PAYMENT MODE -->
+                                <div class="wizard-panel" id="panel-3">
+                                    <h5 class="font-weight-bold mb-3 text-dark"><i class="bi bi-wallet2 text-success me-2"></i>Step 3: Choose Payment Mode</h5>
+
+                                    <!-- Test Mode warning -->
+                                    <div class="alert alert-warning p-3 small mb-4 border border-warning-subtle" style="background-color: #FFFBEB; border-radius: 0.75rem; color: #92400E;">
+                                        <strong><i class="bi bi-info-circle-fill me-1"></i>Razorpay Sandbox Info:</strong><br>
+                                        - Select <strong>Razorpay</strong> to process online simulation. For cards, use <code>6527 6589 0000 1005</code> with CVV <code>123</code>. Or use Netbanking success mock bank.
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label for="paymentMethod" class="form-label font-weight-bold text-dark">Payment Option</label>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <div class="card p-3 border rounded-4 text-center cursor-pointer payment-option-card active" onclick="selectPayment('COD')">
+                                                    <i class="bi bi-cash-coin fs-2 text-success mb-2"></i>
+                                                    <h6 class="mb-1 fw-bold text-dark">Cash On Delivery</h6>
+                                                    <p class="small text-muted mb-0">Pay on pickup or delivery</p>
+                                                    <input class="form-check-input d-none" type="radio" name="paymentMethod" id="payCOD" value="COD" checked>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="card p-3 border rounded-4 text-center cursor-pointer payment-option-card" onclick="selectPayment('RAZORPAY')">
+                                                    <i class="bi bi-credit-card-2-front fs-2 text-primary mb-2"></i>
+                                                    <h6 class="mb-1 fw-bold text-dark">Razorpay Test Mode</h6>
+                                                    <p class="small text-muted mb-0">Card, Netbanking, UPI</p>
+                                                    <input class="form-check-input d-none" type="radio" name="paymentMethod" id="payRazorpay" value="RAZORPAY">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between mt-4">
+                                        <button type="button" class="btn btn-outline-secondary px-4 rounded-pill" onclick="prevStep(2)">
+                                            <i class="bi bi-arrow-left me-1"></i> Back
+                                        </button>
+                                        <button type="button" class="btn btn-dark px-4 rounded-pill font-weight-bold" onclick="nextStep(4)">
+                                            Next Step <i class="bi bi-arrow-right ms-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- STEP 4: CONFIRMATION -->
+                                <div class="wizard-panel" id="panel-4">
+                                    <h5 class="font-weight-bold mb-3 text-dark"><i class="bi bi-clipboard-check-fill text-info me-2"></i>Step 4: Confirm & Place Order</h5>
+                                    
+                                    <div class="card bg-light border-0 rounded-4 p-4 mb-4 text-dark">
+                                        <h6 class="font-weight-bold text-secondary border-bottom pb-2 mb-3"><i class="bi bi-truck me-2"></i>Dispatch Summary</h6>
+                                        <div class="row g-3 mb-4">
+                                            <div class="col-md-6">
+                                                <p class="mb-1 text-muted small">Pickup Origin Address:</p>
+                                                <p class="small fw-semibold" id="confirmPickup">-</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p class="mb-1 text-muted small">Destination Address:</p>
+                                                <p class="small fw-semibold" id="confirmDelivery">-</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p class="mb-1 text-muted small">Package details:</p>
+                                                <p class="small fw-semibold" id="confirmPackage">-</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p class="mb-1 text-muted small">Est. Weight:</p>
+                                                <p class="small fw-semibold" id="confirmWeight">-</p>
+                                            </div>
+                                        </div>
+
+                                        <h6 class="font-weight-bold text-secondary border-bottom pb-2 mb-3"><i class="bi bi-cart me-2"></i>Product Details</h6>
+                                        <div class="row g-3 mb-4">
+                                            <div class="col-12" id="confirmProductGroup">
+                                                <p class="small fw-semibold text-muted" id="confirmProductSummary">Courier / Package Delivery Only (No Product purchase details provided)</p>
+                                            </div>
+                                        </div>
+
+                                        <h6 class="font-weight-bold text-secondary border-bottom pb-2 mb-2"><i class="bi bi-wallet2 me-2"></i>Invoice Billing & Payment</h6>
+                                        <div class="d-flex justify-content-between mb-1 small">
+                                            <span>Subtotal / Items Cost:</span>
+                                            <span class="fw-bold" id="confirmSubtotal">₹0.00</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-1 small">
+                                            <span>Delivery Fee:</span>
+                                            <span class="fw-bold" id="confirmDeliveryFee">₹50.00</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-1 small">
+                                            <span>Service Tax (5%):</span>
+                                            <span class="fw-bold" id="confirmTax">₹2.50</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between border-top pt-2 mt-2 h6 mb-0">
+                                            <span class="fw-bold text-dark">Amount Due:</span>
+                                            <span class="fw-bold text-success" id="confirmTotal">₹52.50</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mt-2 small">
+                                            <span>Chosen Payment Mode:</span>
+                                            <span class="badge bg-dark rounded-pill px-3 py-1 font-weight-bold" id="confirmPaymentMethod">Cash On Delivery</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between mt-4">
+                                        <button type="button" class="btn btn-outline-secondary px-4 rounded-pill" onclick="prevStep(3)">
+                                            <i class="bi bi-arrow-left me-1"></i> Back
+                                        </button>
+                                        <button type="submit" class="btn btn-success px-5 rounded-pill font-weight-bold" id="submitOrderBtn">
+                                            Place Order & Continue <i class="bi bi-check-circle-fill ms-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Side Live Estimate Calculator View -->
+                    <div class="col-lg-4">
+                        <div class="card custom-card p-4 bg-light border-0 shadow-sm d-flex flex-column justify-content-between rounded-4 h-100">
+                            <div>
+                                <h5 class="font-weight-bold mb-3 text-dark"><i class="bi bi-file-earmark-text text-orange me-2"></i>Live Estimation</h5>
+                                <p class="small text-muted mb-4">A live breakdown calculation of charges as you fill the steps.</p>
+
+                                <div class="d-flex justify-content-between mb-2 text-secondary">
+                                    <span>Product Subtotal</span>
+                                    <span id="previewProductSubtotal">₹0.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 text-secondary">
+                                    <span>Delivery Base Fee</span>
+                                    <span>₹50.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 text-secondary text-truncate">
+                                    <span>Distance-based Surcharge</span>
+                                    <span id="previewDistanceSurcharge">₹0.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 text-secondary fw-semibold border-top pt-2">
+                                    <span>Delivery Charge Total</span>
+                                    <span id="previewDeliveryTotal" class="text-dark">₹50.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 text-secondary">
+                                    <span>Subtotal (Items + Shipping)</span>
+                                    <span id="previewSubtotal">₹50.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3 text-secondary">
+                                    <span>Service Tax (5%)</span>
+                                    <span id="previewTax">₹2.50</span>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                                    <span class="h6 mb-0 text-dark fw-bold">Estimated Total</span>
+                                    <span class="h4 mb-0 text-success fw-bold" id="previewTotal">₹52.50</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 pt-3 border-top text-center text-muted small">
+                                <i class="bi bi-shield-fill-check text-success me-1"></i> Fully Encrypted Payments
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unified Orders History Ledger -->
+                <div class="card custom-card p-4 mt-5 border-0 shadow-sm rounded-4 bg-white">
+                    <h5 class="font-weight-bold mb-4 text-dark"><i class="bi bi-list-check me-2"></i>My Delivery Orders History</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 text-dark">
+                            <thead class="table-light text-muted small">
+                                <tr>
+                                    <th class="ps-4">Order ID</th>
+                                    <th>Product Details</th>
+                                    <th>Pickup / Destination Address</th>
+                                    <th>Shipping Weight</th>
+                                    <th>Total Amount</th>
+                                    <th>Date Logged</th>
+                                    <th>Payment Status</th>
+                                    <th>Delivery Status</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="small">
+                                <tr th:each="order : ${orders}">
+                                    <td class="ps-4 font-weight-bold text-primary" th:text="${'#ORD-' + order.orderId}">#ORD-101</td>
+                                    <td>
+                                        <div th:if="${order.productName != null}">
+                                            <span class="font-weight-bold text-dark" th:text="${order.productName}">Product Name</span>
+                                            <br/>
+                                            <span class="text-muted small" th:text="${order.quantity + 'x @ ₹' + order.productPrice + ' (' + order.productCategory + ')'}">Details</span>
+                                        </div>
+                                        <div th:if="${order.productName == null}">
+                                            <span class="text-muted italic"><i class="bi bi-box-seam me-1"></i>Courier Delivery Only</span>
+                                            <span class="badge bg-light text-dark ms-1" th:text="${order.packageType}">Document</span>
+                                            <br/>
+                                            <span class="font-weight-semibold text-secondary" th:text="${order.parcelDescription}">Description</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="small font-weight-semibold" th:text="${order.pickupAddress}">Origin</span>
+                                        <i class="bi bi-arrow-right mx-1 text-muted"></i>
+                                        <span class="small text-secondary" th:text="${order.deliveryAddress}">Destination</span>
+                                    </td>
+                                    <td th:text="${order.parcelWeight + ' kg'}">1.5 kg</td>
+                                    <td class="font-weight-bold text-dark" th:text="${'₹' + order.totalAmount}">₹105.00</td>
+                                    <td th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">2026-06-15 12:00</td>
+                                    <td>
+                                        <span class="badge rounded-pill px-3 py-1 font-weight-bold" 
+                                              th:classappend="${order.paymentStatus == 'PAID' ? 'bg-success' : 
+                                                                order.paymentStatus == 'FAILED' ? 'bg-danger' : 
+                                                                order.paymentStatus == 'REFUNDED' ? 'bg-info' : 'bg-warning text-dark'}"
+                                              th:text="${order.paymentStatus}">PENDING</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge rounded-pill px-3 py-1 text-uppercase"
+                                              th:classappend="${order.deliveryStatus == 'DELIVERED' ? 'bg-success' : 
+                                                                order.deliveryStatus == 'PENDING' ? 'bg-secondary' : 
+                                                                order.deliveryStatus == 'CANCELLED' || order.deliveryStatus == 'REJECTED' ? 'bg-danger' : 'bg-primary'}"
+                                              th:text="${order.deliveryStatus}">PENDING</span>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="d-flex justify-content-end gap-1">
+                                            <a th:href="@{/customer/orders/invoice/{id}(id=${order.orderId})}" class="btn btn-sm btn-outline-dark rounded-pill px-3">
+                                                <i class="bi bi-eye me-1"></i>View
+                                            </a>
+                                            <button th:if="${order.paymentStatus == 'PENDING' || order.paymentStatus == 'FAILED'}" 
+                                                    class="btn btn-sm btn-success rounded-pill px-3 font-weight-bold" 
+                                                    data-bs-toggle="modal" 
+                                                    th:data-bs-target="${'#paymentModal' + order.orderId}">
+                                                Pay Now
+                                            </button>
+                                            <button th:if="${order.deliveryStatus == 'PENDING' || order.deliveryStatus == 'ASSIGNED'}" 
+                                                    class="btn btn-sm btn-danger rounded-pill px-3 font-weight-bold" 
+                                                    data-bs-toggle="modal" 
+                                                    th:data-bs-target="${'#cancelOrderModal' + order.orderId}">
+                                                Cancel Order
+                                            </button>
+                                            <button th:if="${order.deliveryStatus == 'DELIVERED'}" 
+                                                    class="btn btn-sm btn-warning rounded-pill px-3 font-weight-bold text-dark" 
+                                                    data-bs-toggle="modal" 
+                                                    th:data-bs-target="${'#feedbackModal' + order.orderId}">
+                                                <i class="bi bi-star-fill me-1"></i>Feedback
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(orders)}">
+                                    <td colspan="9" class="text-center text-muted py-5">
+                                        <i class="bi bi-basket3 fs-1 text-muted"></i>
+                                        <p class="mt-2 mb-0">You have no order/delivery histories logged.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Retrofitted Pay Now Modals for manual checkouts / retry payments -->
+    <div th:each="order : ${orders}">
+        <div class="modal fade text-start" th:id="${'paymentModal' + order.orderId}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 rounded-4 shadow-lg text-dark">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title font-weight-bold text-dark">Select Payment Method</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form th:action="@{/customer/orders/pay}" method="POST" th:id="${'payForm' + order.orderId}" th:data-order-id="${order.orderId}" onsubmit="return handlePaymentSubmit(event, this)">
+                        <input type="hidden" name="orderId" th:value="${order.orderId}">
+                        <div class="modal-body pt-3">
+                            <p class="text-secondary small mb-3">You are checking out for Order <strong th:text="${'#ORD-' + order.orderId}">#ORD-101</strong>. Amount Payable: <strong class="text-success" th:text="${'₹' + order.totalAmount}">₹0.00</strong></p>
+
+                            <div class="mb-3">
+                                <label for="paymentMethod" class="form-label font-weight-bold small">Payment Option</label>
+                                <select class="form-select rounded-pill" name="paymentMethod" th:id="${'methodSelect' + order.orderId}" onchange="toggleTxnInput(this)" required>
+                                    <option value="RAZORPAY">Razorpay</option>
+                                    <option value="CARD">Credit/Debit Card (Mock)</option>
+                                    <option value="COD">Cash On Delivery (COD)</option>
+                                </select>
+                            </div>
+
+                            <div th:id="${'txnFields' + order.orderId}" style="display: none;">
+                                <div class="mb-3">
+                                    <label th:id="${'txnLabel' + order.orderId}" class="form-label font-weight-bold small">Transaction Reference / Reference ID</label>
+                                    <input type="text" class="form-control rounded-pill" name="transactionId" placeholder="e.g. TXN-1082531" th:id="${'txnInput' + order.orderId}">
+                                    <small th:id="${'txnHelp' + order.orderId}" class="text-muted">Enter mock reference to simulate.</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-success px-4 rounded-pill font-weight-bold">Confirm Payout</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Retrofitted Order Cancellation Modals -->
+    <div th:each="order : ${orders}">
+        <div th:if="${order.deliveryStatus == 'PENDING' || order.deliveryStatus == 'ASSIGNED'}" 
+             class="modal fade text-start" 
+             th:id="${'cancelOrderModal' + order.orderId}" 
+             tabindex="-1" 
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 rounded-4 shadow-lg text-dark">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title font-weight-bold text-dark" th:text="${'Cancel Order #ORD-' + order.orderId}">Cancel Order</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form th:action="@{/customer/orders/cancel}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this order?')">
+                        <input type="hidden" name="orderId" th:value="${order.orderId}">
+                        <div class="modal-body pt-3">
+                            <p class="text-secondary small mb-3">You are requesting to cancel order <strong th:text="${'#ORD-' + order.orderId}">#ORD-101</strong>. Please provide a reason below.</p>
+                            
+                            <div class="mb-3">
+                                <label for="reason" class="form-label font-weight-bold small">Reason for Cancellation</label>
+                                <select class="form-select rounded-pill" name="reason" required>
+                                    <option value="Ordered by mistake">Ordered by mistake</option>
+                                    <option value="Wrong address entered">Wrong address entered</option>
+                                    <option value="Found a better option">Found a better option</option>
+                                    <option value="Delay in assignment">Delay in assignment</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal" style="font-size: 0.85rem; font-weight: 600;">Close</button>
+                            <button type="submit" class="btn btn-danger px-4 rounded-pill" style="font-size: 0.85rem; font-weight: 600;">Cancel Order</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Retrofitted Feedback Modals -->
+    <div th:each="order : ${orders}">
+        <div th:if="${order.deliveryStatus == 'DELIVERED'}" 
+             class="modal fade text-start" 
+             th:id="${'feedbackModal' + order.orderId}" 
+             tabindex="-1" 
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 rounded-4 shadow-lg text-dark">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title font-weight-bold text-dark">Submit Feedback</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form th:action="@{/customer/feedback/submit}" method="POST" class="needs-validation" novalidate>
+                        <input type="hidden" name="orderId" th:value="${order.orderId}">
+                        <div class="modal-body pt-3">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label font-weight-bold small text-muted">Order ID</label>
+                                    <input type="text" class="form-control rounded-pill bg-light" th:value="${'#ORD-' + order.orderId}" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label font-weight-bold small text-muted">Product / Package</label>
+                                    <input type="text" class="form-control rounded-pill bg-light" th:value="${order.productName != null ? order.productName : order.packageDescription}" readonly>
+                                </div>
+                            </div>
+                            
+                            <div class="my-3 text-center">
+                                <label class="form-label font-weight-bold small d-block mb-2 text-muted">Your Rating</label>
+                                <div class="star-rating d-flex gap-1 justify-content-center fs-2 my-2 text-warning">
+                                    <i class="bi bi-star star-icon cursor-pointer" data-value="1" th:onclick="'setRating(' + ${order.orderId} + ', 1)'" style="cursor: pointer;"></i>
+                                    <i class="bi bi-star star-icon cursor-pointer" data-value="2" th:onclick="'setRating(' + ${order.orderId} + ', 2)'" style="cursor: pointer;"></i>
+                                    <i class="bi bi-star star-icon cursor-pointer" data-value="3" th:onclick="'setRating(' + ${order.orderId} + ', 3)'" style="cursor: pointer;"></i>
+                                    <i class="bi bi-star star-icon cursor-pointer" data-value="4" th:onclick="'setRating(' + ${order.orderId} + ', 4)'" style="cursor: pointer;"></i>
+                                    <i class="bi bi-star star-icon cursor-pointer" data-value="5" th:onclick="'setRating(' + ${order.orderId} + ', 5)'" style="cursor: pointer;"></i>
+                                </div>
+                                <input type="hidden" name="rating" th:id="${'ratingInput-' + order.orderId}" required>
+                                <div class="invalid-feedback text-center">Please select a star rating.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label font-weight-bold small text-muted">Feedback Category</label>
+                                <select class="form-select rounded-pill" name="category" required>
+                                    <option value="" disabled selected>Select category...</option>
+                                    <option value="Delivery Service">Delivery Service</option>
+                                    <option value="Agent Behavior">Agent Behavior</option>
+                                    <option value="Product Handling">Product Handling</option>
+                                    <option value="Delivery Time">Delivery Time</option>
+                                    <option value="Overall Experience">Overall Experience</option>
+                                </select>
+                                <div class="invalid-feedback">Please select a category.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label font-weight-bold small text-muted">Comments (Optional)</label>
+                                <textarea class="form-control rounded-4" name="comments" rows="3" maxlength="500" placeholder="Tell us more about your experience..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal" style="font-size: 0.85rem; font-weight: 600;">Close</button>
+                            <button type="submit" class="btn btn-warning px-4 rounded-pill text-dark font-weight-bold" style="font-size: 0.85rem; font-weight: 600;">Submit Feedback</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Wizard Form Management, Live Estimator and Payment Scripts -->
+    <script>
+        // DOM Elements
+        const form = document.getElementById('wizardOrderForm');
+        const pickupInput = document.getElementById('pickupAddress');
+        const deliveryInput = document.getElementById('deliveryAddress');
+        const packageDescInput = document.getElementById('parcelDescription');
+        const packageWeightInput = document.getElementById('parcelWeight');
+
+        const hasProductToggle = document.getElementById('hasProductToggle');
+        const productFieldsWrapper = document.getElementById('productFieldsWrapper');
+        const productNameInput = document.getElementById('productName');
+        const productCategorySelect = document.getElementById('productCategory');
+        const productPriceInput = document.getElementById('productPrice');
+        const quantityInput = document.getElementById('quantity');
+
+        // Wizard steps tracking
+        let currentStep = 1;
+
+        function showStep(step) {
+            // Validate previous step before proceeding
+            if (step > currentStep) {
+                if (!validateStep(currentStep)) return;
+            }
+
+            // Update indicators classes
+            for (let i = 1; i <= 4; i++) {
+                const ind = document.getElementById('indicator-' + i);
+                if (i === step) {
+                    ind.className = "step-item active";
+                } else if (i < step) {
+                    ind.className = "step-item completed";
+                } else {
+                    ind.className = "step-item";
+                }
+            }
+
+            // Hide all panels, show active
+            document.querySelectorAll('.wizard-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('panel-' + step).classList.add('active');
+
+            currentStep = step;
+
+            // If confirmation step, load summary
+            if (step === 4) {
+                loadConfirmationSummary();
+            }
+        }
+
+        function nextStep(step) {
+            showStep(step);
+        }
+
+        function prevStep(step) {
+            showStep(step);
+        }
+
+        function validateStep(step) {
+            if (step === 1) {
+                let valid = true;
+                if (!pickupInput.value.trim()) { pickupInput.classList.add('is-invalid'); valid = false; }
+                else { pickupInput.classList.remove('is-invalid'); }
+
+                if (!deliveryInput.value.trim()) { deliveryInput.classList.add('is-invalid'); valid = false; }
+                else { deliveryInput.classList.remove('is-invalid'); }
+
+                if (!packageDescInput.value.trim()) { packageDescInput.classList.add('is-invalid'); valid = false; }
+                else { packageDescInput.classList.remove('is-invalid'); }
+
+                const weight = parseFloat(packageWeightInput.value);
+                if (isNaN(weight) || weight <= 0) { packageWeightInput.classList.add('is-invalid'); valid = false; }
+                else { packageWeightInput.classList.remove('is-invalid'); }
+
+                return valid;
+            }
+            if (step === 2) {
+                if (hasProductToggle.checked) {
+                    let valid = true;
+                    if (!productNameInput.value.trim()) { productNameInput.classList.add('is-invalid'); valid = false; }
+                    else { productNameInput.classList.remove('is-invalid'); }
+
+                    const price = parseFloat(productPriceInput.value);
+                    if (isNaN(price) || price < 0) { productPriceInput.classList.add('is-invalid'); valid = false; }
+                    else { productPriceInput.classList.remove('is-invalid'); }
+
+                    const qty = parseInt(quantityInput.value);
+                    if (isNaN(qty) || qty < 1) { quantityInput.classList.add('is-invalid'); valid = false; }
+                    else { quantityInput.classList.remove('is-invalid'); }
+
+                    return valid;
+                }
+            }
+            return true;
+        }
+
+        // Live Cost Breakdown Calculator
+        function calculateLiveEstimate() {
+            const hasProduct = hasProductToggle.checked;
+            const price = hasProduct ? (parseFloat(productPriceInput.value) || 0) : 0;
+            const qty = hasProduct ? (parseInt(quantityInput.value) || 0) : 0;
+            const pickupLen = pickupInput.value.trim().length;
+            const deliveryLen = deliveryInput.value.trim().length;
+
+            const productSubtotal = price * qty;
+            const distanceSurcharge = (pickupLen + deliveryLen) * 0.5;
+            const deliveryTotal = 50.0 + distanceSurcharge;
+            const subtotal = productSubtotal + deliveryTotal;
+            const tax = subtotal * 0.05;
+            const total = subtotal + tax;
+
+            // Update Estimate cards
+            document.getElementById('previewProductSubtotal').innerText = '₹' + productSubtotal.toFixed(2);
+            document.getElementById('previewDistanceSurcharge').innerText = '₹' + distanceSurcharge.toFixed(2);
+            document.getElementById('previewDeliveryTotal').innerText = '₹' + deliveryTotal.toFixed(2);
+            document.getElementById('previewSubtotal').innerText = '₹' + subtotal.toFixed(2);
+            document.getElementById('previewTax').innerText = '₹' + tax.toFixed(2);
+            document.getElementById('previewTotal').innerText = '₹' + total.toFixed(2);
+
+            return { productSubtotal, deliveryTotal, tax, total };
+        }
+
+        function toggleProductFields() {
+            if (hasProductToggle.checked) {
+                productFieldsWrapper.style.opacity = "1";
+                productFieldsWrapper.style.pointerEvents = "auto";
+                productNameInput.setAttribute('required', 'required');
+                productPriceInput.setAttribute('required', 'required');
+                quantityInput.setAttribute('required', 'required');
+            } else {
+                productFieldsWrapper.style.opacity = "0.5";
+                productFieldsWrapper.style.pointerEvents = "none";
+                productNameInput.removeAttribute('required');
+                productPriceInput.removeAttribute('required');
+                quantityInput.removeAttribute('required');
+                
+                // Clear fields
+                productNameInput.value = '';
+                productCategorySelect.value = '';
+                productPriceInput.value = '0.00';
+                quantityInput.value = '1';
+            }
+            calculateLiveEstimate();
+        }
+
+        function selectPayment(method) {
+            document.querySelectorAll('.payment-option-card').forEach(c => c.classList.remove('active'));
+            if (method === 'COD') {
+                document.getElementById('payCOD').checked = true;
+                event.currentTarget.classList.add('active');
+            } else {
+                document.getElementById('payRazorpay').checked = true;
+                event.currentTarget.classList.add('active');
+            }
+        }
+
+        // Live calculation triggers
+        pickupInput.addEventListener('input', calculateLiveEstimate);
+        deliveryInput.addEventListener('input', calculateLiveEstimate);
+        productPriceInput.addEventListener('input', calculateLiveEstimate);
+        quantityInput.addEventListener('input', calculateLiveEstimate);
+
+        // Weight category sync triggers
+        const weightCategorySelect = document.getElementById('weightCategory');
+        if (weightCategorySelect && packageWeightInput) {
+            weightCategorySelect.addEventListener('change', function() {
+                const val = this.value;
+                if (val === '0-1') {
+                    packageWeightInput.value = '0.5';
+                } else if (val === '1-5') {
+                    packageWeightInput.value = '3.0';
+                } else if (val === '5-10') {
+                    packageWeightInput.value = '7.5';
+                } else if (val === '10-20') {
+                    packageWeightInput.value = '15.0';
+                } else if (val === '20+') {
+                    packageWeightInput.value = '25.0';
+                }
+                calculateLiveEstimate();
+            });
+            packageWeightInput.addEventListener('input', function() {
+                const w = parseFloat(this.value);
+                if (!isNaN(w)) {
+                    if (w >= 0 && w <= 1) {
+                        weightCategorySelect.value = '0-1';
+                    } else if (w > 1 && w <= 5) {
+                        weightCategorySelect.value = '1-5';
+                    } else if (w > 5 && w <= 10) {
+                        weightCategorySelect.value = '5-10';
+                    } else if (w > 10 && w <= 20) {
+                        weightCategorySelect.value = '10-20';
+                    } else if (w > 20) {
+                        weightCategorySelect.value = '20+';
+                    }
+                }
+                calculateLiveEstimate();
+            });
+        }
+
+        function loadConfirmationSummary() {
+            const estimates = calculateLiveEstimate();
+            const chosenMethod = document.getElementById('payCOD').checked ? 'COD' : 'RAZORPAY';
+
+            document.getElementById('confirmPickup').innerText = pickupInput.value;
+            document.getElementById('confirmDelivery').innerText = deliveryInput.value;
+            document.getElementById('confirmPackage').innerText = packageDescInput.value + ' [' + document.getElementById('packageType').value + ']';
+            document.getElementById('confirmWeight').innerText = packageWeightInput.value + ' kg';
+
+            if (hasProductToggle.checked && productNameInput.value.trim()) {
+                document.getElementById('confirmProductGroup').innerHTML = `
+                    <div class="row g-2">
+                        <div class="col-md-6"><p class="mb-0 text-muted small">Product Name:</p><p class="small fw-semibold">${productNameInput.value}</p></div>
+                        <div class="col-md-6"><p class="mb-0 text-muted small">Category:</p><p class="small fw-semibold">${productCategorySelect.value || 'N/A'}</p></div>
+                        <div class="col-md-6"><p class="mb-0 text-muted small">Price per Unit:</p><p class="small fw-semibold">₹${parseFloat(productPriceInput.value).toFixed(2)}</p></div>
+                        <div class="col-md-6"><p class="mb-0 text-muted small">Quantity:</p><p class="small fw-semibold">${quantityInput.value} units</p></div>
+                    </div>`;
+            } else {
+                document.getElementById('confirmProductGroup').innerHTML = `
+                    <p class="small fw-semibold text-muted italic mb-0"><i class="bi bi-box-seam me-1"></i>Courier / Package Delivery Only</p>`;
+            }
+
+            document.getElementById('confirmSubtotal').innerText = '₹' + estimates.productSubtotal.toFixed(2);
+            document.getElementById('confirmDeliveryFee').innerText = '₹' + estimates.deliveryTotal.toFixed(2);
+            document.getElementById('confirmTax').innerText = '₹' + estimates.tax.toFixed(2);
+            document.getElementById('confirmTotal').innerText = '₹' + estimates.total.toFixed(2);
+            document.getElementById('confirmPaymentMethod').innerText = chosenMethod === 'COD' ? 'Cash On Delivery (COD)' : 'Razorpay Sandbox Mode';
+        }
+
+        // Submitting unified order wizard
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!validateStep(1) || !validateStep(2)) {
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitOrderBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...`;
+
+            const formData = new FormData(form);
+            // Append optional values if checkbox unchecked to ensure clean bindings
+            if (!hasProductToggle.checked) {
+                formData.set('productName', '');
+                formData.set('productCategory', '');
+                formData.set('productPrice', '0.00');
+                formData.set('quantity', '0');
+            }
+
+            const csrfToken = document.querySelector("meta[name='_csrf']")?.getAttribute("content");
+            const csrfHeader = document.querySelector("meta[name='_csrf_header']")?.getAttribute("content");
+
+            const headers = {};
+            if (csrfToken && csrfHeader) {
+                headers[csrfHeader] = csrfToken;
+            }
+
+            // AJAX submit
+            fetch('/customer/orders/create/ajax', {
+                method: 'POST',
+                headers: headers,
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (data.paymentMethod === 'COD') {
+                        window.location.href = data.redirectUrl + "?successMessage=Delivery+order+created+successfully!";
+                    } else {
+                        // Razorpay selected - trigger online checkout
+                        initiateWizardRazorpay(data.orderData);
+                    }
+                } else {
+                    alert('Order creation failed: ' + (data.error || 'Unknown error'));
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `Place Order & Continue <i class="bi bi-check-circle-fill ms-1"></i>`;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Connection error. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `Place Order & Continue <i class="bi bi-check-circle-fill ms-1"></i>`;
+            });
+        });
+
+        function initiateWizardRazorpay(data) {
+            if (data.isMock || typeof Razorpay === 'undefined') {
+                alert("Local Test System: Simulating successful Razorpay payment authorization...");
+                submitWizardVerification(data.orderId, data.razorpayOrderId || "mock_order_id", "pay_mock_" + Math.random().toString(36).substring(2, 11), "sig_mock_" + Math.random().toString(36).substring(2, 11));
+                return;
+            }
+
+            const options = {
+                "key": data.keyId,
+                "amount": data.amount,
+                "currency": data.currency,
+                "name": "LogiTrack Pro",
+                "description": "Unified Order Payment",
+                "order_id": data.razorpayOrderId,
+                "handler": function (response) {
+                    submitWizardVerification(data.orderId, response.razorpay_order_id, response.razorpay_payment_id, response.razorpay_signature);
+                },
+                "prefill": {
+                    "name": data.customerName,
+                    "email": data.customerEmail,
+                    "contact": data.customerPhone
+                },
+                "modal": {
+                    "ondismiss": function () {
+                        window.location.href = '/customer/orders?errorMessage=Payment+cancelled.+You+can+retry+payment+from+the+orders+history.';
+                    }
+                },
+                "theme": { "color": "#0F172A" }
+            };
+            const rzp = new Razorpay(options);
+            rzp.open();
+        }
+
+        function submitWizardVerification(orderId, razorpayOrderId, razorpayPaymentId, signature) {
+            const formData = new FormData();
+            formData.append('orderId', orderId);
+            formData.append('razorpay_order_id', razorpayOrderId);
+            formData.append('razorpay_payment_id', razorpayPaymentId);
+            formData.append('razorpay_signature', signature);
+
+            const csrfToken = document.querySelector("meta[name='_csrf']")?.getAttribute("content");
+            const csrfHeader = document.querySelector("meta[name='_csrf_header']")?.getAttribute("content");
+            const headers = {};
+            if (csrfToken && csrfHeader) { headers[csrfHeader] = csrfToken; }
+
+            fetch('/customer/orders/pay/verify', {
+                method: 'POST',
+                headers: headers,
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = '/customer/orders?successMessage=Payment+verified+successfully!+Delivery+order+confirmed.';
+                } else {
+                    window.location.href = '/customer/orders?errorMessage=Payment+verification+failed:+' + data.error;
+                }
+            })
+            .catch(err => {
+                window.location.href = '/customer/orders?errorMessage=Network+verification+error.';
+            });
+        }
+
+        // Retrofitted standard payment form logic for Retrying Payment in modal
+        function handlePaymentSubmit(event, formElement) {
+            const orderId = formElement.getAttribute('data-order-id');
+            const selectEl = document.getElementById('methodSelect' + orderId);
+            if (selectEl.value === 'RAZORPAY') {
+                event.preventDefault();
+                payWithRazorpay(orderId);
+                return false;
+            }
+            return true;
+        }
+
+        function payWithRazorpay(orderId) {
+            const modalEl = document.getElementById('paymentModal' + orderId);
+            const closeBtn = modalEl.querySelector('[data-bs-dismiss="modal"]');
+            if (closeBtn) closeBtn.click();
+
+            fetch('/customer/orders/pay/razorpay?orderId=' + orderId)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Initialization Error: ' + data.error);
+                        return;
+                    }
+                    if (data.isMock || typeof Razorpay === 'undefined') {
+                        alert("Local Fallback: Simulating successful Razorpay checkout...");
+                        verifyRazorpayPaymentDirect(orderId, data.razorpayOrderId || ("mock_order_" + orderId), "pay_mock_" + Math.random().toString(36).substring(2, 11), "sig_mock_" + Math.random().toString(36).substring(2, 11));
+                        return;
+                    }
+                    const options = {
+                        "key": data.keyId,
+                        "amount": data.amount,
+                        "currency": data.currency,
+                        "name": "LogiTrack Pro",
+                        "description": "Retry Order Payment",
+                        "order_id": data.razorpayOrderId,
+                        "handler": function (response) {
+                            verifyRazorpayPaymentDirect(orderId, response.razorpay_order_id, response.razorpay_payment_id, response.razorpay_signature);
+                        },
+                        "prefill": {
+                            "name": data.customerName,
+                            "email": data.customerEmail,
+                            "contact": data.customerPhone
+                        },
+                        "theme": { "color": "#0F172A" }
+                    };
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+                });
+        }
+
+        function verifyRazorpayPaymentDirect(orderId, razorpayOrderId, razorpayPaymentId, signature) {
+            const formData = new FormData();
+            formData.append('orderId', orderId);
+            formData.append('razorpay_order_id', razorpayOrderId);
+            formData.append('razorpay_payment_id', razorpayPaymentId);
+            formData.append('razorpay_signature', signature);
+
+            const csrfToken = document.querySelector("meta[name='_csrf']")?.getAttribute("content");
+            const csrfHeader = document.querySelector("meta[name='_csrf_header']")?.getAttribute("content");
+            const headers = {};
+            if (csrfToken && csrfHeader) { headers[csrfHeader] = csrfToken; }
+
+            fetch('/customer/orders/pay/verify', {
+                method: 'POST',
+                headers: headers,
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = '/customer/orders?successMessage=Payment+successfully+completed!';
+                } else {
+                    window.location.href = '/customer/orders?errorMessage=Payment+verification+failed:+' + data.error;
+                }
+            });
+        }
+
+        function toggleTxnInput(selectElement) {
+            const orderId = selectElement.id.replace('methodSelect', '');
+            const txnDiv = document.getElementById('txnFields' + orderId);
+            const labelEl = document.getElementById('txnLabel' + orderId);
+            const inputField = document.getElementById('txnInput' + orderId);
+            const helpEl = document.getElementById('txnHelp' + orderId);
+
+            if (selectElement.value === 'COD') {
+                txnDiv.style.display = 'block';
+                inputField.setAttribute('required', 'required');
+                labelEl.innerText = "Transaction Reference / Reference ID";
+                inputField.placeholder = "e.g. Will pay cash";
+                helpEl.innerText = "Enter mock reference to simulate COD.";
+            } else if (selectElement.value === 'CARD') {
+                txnDiv.style.display = 'block';
+                inputField.setAttribute('required', 'required');
+                labelEl.innerText = "Card Number";
+                inputField.placeholder = "Enter card number";
+                helpEl.innerText = "Simulated card check.";
+            } else {
+                txnDiv.style.display = 'none';
+                inputField.removeAttribute('required');
+            }
+        }
+
+        // On page load check if a payment should be auto-launched (via redirect query param)
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const autoPayId = urlParams.get('payOrderId');
+            if (autoPayId) {
+                payWithRazorpay(autoPayId);
+            }
+        });
+
+        function setRating(orderId, ratingValue) {
+            const ratingInput = document.getElementById('ratingInput-' + orderId);
+            ratingInput.value = ratingValue;
+            ratingInput.classList.remove('is-invalid');
+            
+            const modalEl = document.getElementById('feedbackModal' + orderId);
+            const stars = modalEl.querySelectorAll('.star-icon');
+            
+            stars.forEach((star, index) => {
+                if (index < ratingValue) {
+                    star.classList.remove('bi-star');
+                    star.classList.add('bi-star-fill');
+                } else {
+                    star.classList.remove('bi-star-fill');
+                    star.classList.add('bi-star');
+                }
+            });
+        }
+
+        // Bootstrap form validation
+        (() => {
+            'use strict'
+            const forms = document.querySelectorAll('.needs-validation')
+            Array.from(forms).forEach(form => {
+                form.addEventListener('submit', event => {
+                    const ratingInput = form.querySelector('input[name="rating"]');
+                    if (ratingInput && (!ratingInput.value || ratingInput.value === '0' || ratingInput.value === '')) {
+                        ratingInput.classList.add('is-invalid');
+                        event.preventDefault();
+                        event.stopPropagation();
+                    } else if (ratingInput) {
+                        ratingInput.classList.remove('is-invalid');
+                    }
+
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })()
+    </script>
+</body>
+
+</html>

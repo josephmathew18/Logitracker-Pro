@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Cancellations & Refunds - LogiTrack Pro</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck-flatbed me-2"></i>LogiTrack<span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/customer/dashboard}" class="sidebar-item "><i class="bi bi-grid-fill"></i>Client Dashboard</a>
+                <a th:href="@{/customer/orders}" class="sidebar-item "><i class="bi bi-cart-plus-fill"></i>Create Delivery Order</a>
+                <a th:href="@{/customer/payments}" class="sidebar-item "><i class="bi bi-credit-card-2-front"></i>Transactions</a>
+                <a th:href="@{/customer/cancellations}" class="sidebar-item active"><i class="bi bi-x-octagon-fill"></i>Cancellations</a>
+                <a th:href="@{/customer/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>My Feedback</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Cancellation Ledger')}"></div>
+
+            <div class="content-body">
+                <span class="app-overview-tag">Order Reversals</span>
+                <h2 class="app-page-title">My Cancellation & Refund Requests</h2>
+
+                <div class="row g-4">
+                    <!-- Cancellations Table -->
+                    <div class="col-12">
+                        <div class="card custom-card p-4">
+                            <h5 class="font-weight-bold mb-4"><i class="bi bi-x-octagon text-danger me-2"></i>Cancellation Requests History</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-custom align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Cancellation ID</th>
+                                            <th>Order Details</th>
+                                            <th>Reason</th>
+                                            <th>Refund Estimation</th>
+                                            <th>Cancellation Date</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="cancel : ${cancellations}">
+                                            <td class="font-weight-bold text-dark" th:text="${'#CAN-' + cancel.cancellationId}">#CAN-1</td>
+                                            <td>
+                                                <div class="font-weight-bold" th:text="${cancel.order.productName}">Product Name</div>
+                                                <small class="text-muted" th:text="${'Order ID: #' + cancel.order.orderId}"></small>
+                                            </td>
+                                            <td th:text="${cancel.reason}">Wrong Address</td>
+                                            <td class="font-weight-bold text-success" th:text="${'₹' + cancel.refundAmount}">₹0.00</td>
+                                            <td th:text="${#temporals.format(cancel.cancellationDate, 'yyyy-MM-dd HH:mm')}">2026-06-16 12:00</td>
+                                            <td>
+                                                <span class="badge rounded-pill" 
+                                                      th:classappend="${cancel.status == 'REFUNDED' ? 'bg-success' : 
+                                                                        cancel.status == 'PROCESSING' ? 'bg-warning text-dark' : 
+                                                                        cancel.status == 'REJECTED' ? 'bg-danger' : 'bg-secondary'}" 
+                                                      th:text="${cancel.status}">REFUNDED</span>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(cancellations)}">
+                                            <td colspan="6" class="text-center text-muted py-5">
+                                                <i class="bi bi-shield-slash fs-1 text-muted"></i>
+                                                <p class="mt-2 mb-0">No cancellation requests logged.</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Refunds Table -->
+                    <div class="col-12 mt-5">
+                        <div class="card custom-card p-4">
+                            <h5 class="font-weight-bold mb-4"><i class="bi bi-wallet2 text-success me-2"></i>Refund Transaction Log</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-custom align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Refund ID</th>
+                                            <th>Razorpay Payment ID</th>
+                                            <th>Razorpay Refund ID</th>
+                                            <th>Refunded Amount</th>
+                                            <th>Refund Status</th>
+                                            <th>Refund Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="ref : ${refunds}">
+                                            <td class="font-weight-bold text-dark" th:text="${'#REF-' + ref.refundId}">#REF-1</td>
+                                            <td th:text="${ref.razorpayPaymentId != null ? ref.razorpayPaymentId : 'N/A'}">pay_XYZ</td>
+                                            <td th:text="${ref.razorpayRefundId != null ? ref.razorpayRefundId : 'N/A'}">ref_ABC</td>
+                                            <td class="font-weight-bold text-success" th:text="${'₹' + ref.refundAmount}">₹0.00</td>
+                                            <td>
+                                                <span class="badge rounded-pill" 
+                                                      th:classappend="${ref.refundStatus == 'REFUNDED' ? 'bg-success' : 
+                                                                        ref.refundStatus == 'PENDING' ? 'bg-warning text-dark' : 
+                                                                        ref.refundStatus == 'PROCESSING' ? 'bg-info' : 'bg-danger'}" 
+                                                      th:text="${ref.refundStatus}">REFUNDED</span>
+                                            </td>
+                                            <td th:text="${#temporals.format(ref.refundDate, 'yyyy-MM-dd HH:mm')}">2026-06-16 12:00</td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(refunds)}">
+                                            <td colspan="6" class="text-center text-muted py-5">
+                                                <i class="bi bi-piggy-bank fs-1 text-muted"></i>
+                                                <p class="mt-2 mb-0">No refund transaction records logged.</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

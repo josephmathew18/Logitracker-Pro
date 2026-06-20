@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Leaves - Agent Operational Portal</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck-flatbed me-2"></i>LogiTrack<span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/agent/dashboard}" class="sidebar-item "><i class="bi bi-card-list"></i>My Shipments</a>
+                <a th:href="@{/agent/expenses}" class="sidebar-item "><i class="bi bi-fuel-pump-fill"></i>Refuel Expenses</a>
+                <a th:href="@{/agent/salaries}" class="sidebar-item "><i class="bi bi-wallet-fill"></i>My Salary</a>
+                <a th:href="@{/agent/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>My Ratings</a>
+                <a th:href="@{/agent/attendance}" class="sidebar-item "><i class="bi bi-calendar-check-fill"></i>My Attendance</a>
+                <a th:href="@{/agent/leaves}" class="sidebar-item active"><i class="bi bi-calendar-minus-fill"></i>My Leaves</a>
+                <a th:href="@{/agent/documents}" class="sidebar-item "><i class="bi bi-file-earmark-medical-fill"></i>My Documents</a>
+                
+                <!-- My Profile Dropdown/Submenu -->
+                <a href="#profileSubmenu" data-bs-toggle="collapse" class="sidebar-item d-flex justify-content-between align-items-center " aria-expanded="false">
+                    <span><i class="bi bi-person-circle"></i>My Profile</span>
+                    <i class="bi bi-chevron-down small" style="margin-right:0; font-size: 0.8rem;"></i>
+                </a>
+                <div class="collapse " id="profileSubmenu">
+                    <a th:href="@{/agent/profile}" class="sidebar-item " style="padding-left: 2.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-person-badge-fill"></i>Profile Details
+                    </a>
+                    <a th:href="@{/agent/change-password}" class="sidebar-item " style="padding-left: 2.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-key-fill"></i>Change Password
+                    </a>
+                </div>
+
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Leave Applications')}"></div>
+
+            <div class="content-body">
+                <!-- Notifications -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <span class="app-overview-tag">Time Off</span>
+                <h2 class="app-page-title">Leave Applications</h2>
+
+                <!-- Leave Balances Cards -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <div class="card custom-card p-4 text-center">
+                            <h6 class="text-muted text-uppercase small font-weight-bold">Casual Leave</h6>
+                            <h2 class="fw-bold mb-0 text-primary" th:text="${balances.casualLeavesLeft}">12</h2>
+                            <small class="text-muted">days remaining</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card custom-card p-4 text-center">
+                            <h6 class="text-muted text-uppercase small font-weight-bold">Sick Leave</h6>
+                            <h2 class="fw-bold mb-0 text-warning" th:text="${balances.sickLeavesLeft}">8</h2>
+                            <small class="text-muted">days remaining</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card custom-card p-4 text-center">
+                            <h6 class="text-muted text-uppercase small font-weight-bold">Annual Leave</h6>
+                            <h2 class="fw-bold mb-0 text-success" th:text="${balances.annualLeavesLeft}">15</h2>
+                            <small class="text-muted">days remaining</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Left: Submit Application Form -->
+                    <div class="col-lg-4">
+                        <div class="card custom-card p-4">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-pencil-square me-2 text-primary"></i>Apply for Leave</h5>
+                            <form th:action="@{/agent/leaves/apply}" method="POST">
+                                <div class="mb-3">
+                                    <label class="form-label text-secondary font-weight-medium">Start Date</label>
+                                    <input type="date" class="form-control" name="startDate" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-secondary font-weight-medium">End Date</label>
+                                    <input type="date" class="form-control" name="endDate" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-secondary font-weight-medium">Leave Type</label>
+                                    <select class="form-select" name="leaveType" required>
+                                        <option value="CASUAL">Casual Leave</option>
+                                        <option value="SICK">Sick Leave</option>
+                                        <option value="ANNUAL">Annual Leave</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-secondary font-weight-medium">Reason</label>
+                                    <textarea class="form-control" name="reason" rows="3" placeholder="State your reason for leave..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary-custom w-100 py-2">
+                                    <i class="bi bi-send-fill me-2"></i>Submit Application
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Right: Previous Leave History -->
+                    <div class="col-lg-8">
+                        <div class="card custom-card p-4 h-100">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-clock-history me-2 text-info"></i>Leave History Logs</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-custom align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Applied Date</th>
+                                            <th>Type</th>
+                                            <th>Date Range</th>
+                                            <th>Status</th>
+                                            <th>Admin Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="leave : ${leaveHistory}">
+                                            <td class="small text-muted font-weight-medium" th:text="${#temporals.format(leave.appliedAt, 'yyyy-MM-dd')}">Applied Date</td>
+                                            <td th:text="${leave.leaveType}">CASUAL</td>
+                                            <td th:text="${leave.startDate + ' to ' + leave.endDate}">Range</td>
+                                            <td>
+                                                <span class="badge" th:classappend="${leave.status == 'APPROVED' ? 'bg-success' : (leave.status == 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark')}" th:text="${leave.status}">PENDING</span>
+                                            </td>
+                                            <td class="small text-secondary" th:text="${leave.remarks != null ? leave.remarks : '-'}">Remarks</td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(leaveHistory)}">
+                                            <td colspan="5" class="text-center text-muted py-5">No leave applications submitted.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

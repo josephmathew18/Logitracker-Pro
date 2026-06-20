@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Dashboard - Delivery Service Provider Management System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck-flatbed me-2"></i>LogiTrack<span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/agent/dashboard}" class="sidebar-item active"><i class="bi bi-card-list"></i>My Shipments</a>
+                <a th:href="@{/agent/expenses}" class="sidebar-item "><i class="bi bi-fuel-pump-fill"></i>Refuel Expenses</a>
+                <a th:href="@{/agent/salaries}" class="sidebar-item "><i class="bi bi-wallet-fill"></i>My Salary</a>
+                <a th:href="@{/agent/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>My Ratings</a>
+                <a th:href="@{/agent/attendance}" class="sidebar-item "><i class="bi bi-calendar-check-fill"></i>My Attendance</a>
+                <a th:href="@{/agent/leaves}" class="sidebar-item "><i class="bi bi-calendar-minus-fill"></i>My Leaves</a>
+                <a th:href="@{/agent/documents}" class="sidebar-item "><i class="bi bi-file-earmark-medical-fill"></i>My Documents</a>
+                
+                <!-- My Profile Dropdown/Submenu -->
+                <a href="#profileSubmenu" data-bs-toggle="collapse" class="sidebar-item d-flex justify-content-between align-items-center " aria-expanded="false">
+                    <span><i class="bi bi-person-circle"></i>My Profile</span>
+                    <i class="bi bi-chevron-down small" style="margin-right:0; font-size: 0.8rem;"></i>
+                </a>
+                <div class="collapse " id="profileSubmenu">
+                    <a th:href="@{/agent/profile}" class="sidebar-item " style="padding-left: 2.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-person-badge-fill"></i>Profile Details
+                    </a>
+                    <a th:href="@{/agent/change-password}" class="sidebar-item " style="padding-left: 2.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-key-fill"></i>Change Password
+                    </a>
+                </div>
+
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Agent Operational Portal')}"></div>
+
+            <div class="content-body">
+                <!-- Notifications -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- Agent Premium Profile & Quick Stats Card -->
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-8">
+                        <div class="card custom-card p-4 h-100 bg-white">
+                            <div class="d-flex align-items-center gap-3 mb-4">
+                                <div style="width: 70px; height: 70px; flex-shrink: 0;">
+                                    <img th:if="${agent.profileImage != null}" th:src="${agent.profileImage}" class="profile-avatar-img h-100 w-100" style="object-fit: cover; border-radius: 50%; border: 2px solid var(--primary-color);" alt="Profile Photo">
+                                    <div th:if="${agent.profileImage == null}" class="avatar-placeholder h-100 w-100" style="border-radius: 50%; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700;" th:text="${#strings.substring(agent.name, 0, 1)}">A</div>
+                                </div>
+                                <div>
+                                    <h5 class="font-weight-bold mb-1 text-dark" th:text="${agent.name}">Demo Agent</h5>
+                                    <p class="small text-muted mb-0">Agent ID: <strong th:text="${agent.id}">1001</strong> | Status: 
+                                        <span class="badge bg-success-subtle text-success font-weight-bold px-2 py-1" style="font-size: 0.75rem;" th:text="${agent.status}">ACTIVE</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- Quick Stats Grid inside the card -->
+                            <div class="row g-3">
+                                <div class="col-sm-4 col-6">
+                                    <div class="p-3 bg-light rounded text-center border">
+                                        <span class="small text-muted d-block font-weight-medium text-uppercase" style="font-size: 0.75rem;">Total Jobs</span>
+                                        <h5 class="fw-bold mb-0 text-dark" th:text="${totalDeliveries}">0</h5>
+                                    </div>
+                                </div>
+                                <div class="col-sm-4 col-6">
+                                    <div class="p-3 bg-light rounded text-center border">
+                                        <span class="small text-muted d-block font-weight-medium text-uppercase" style="font-size: 0.75rem;">Completed</span>
+                                        <h5 class="fw-bold mb-0 text-success" th:text="${completedDeliveries}">0</h5>
+                                    </div>
+                                </div>
+                                <div class="col-sm-4 col-6">
+                                    <div class="p-3 bg-light rounded text-center border">
+                                        <span class="small text-muted d-block font-weight-medium text-uppercase" style="font-size: 0.75rem;">Pending</span>
+                                        <h5 class="fw-bold mb-0 text-warning" th:text="${pendingDeliveries}">0</h5>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-6">
+                                    <div class="p-3 bg-light rounded text-center border">
+                                        <span class="small text-muted d-block font-weight-medium text-uppercase" style="font-size: 0.75rem;">Est. Salary</span>
+                                        <h5 class="fw-bold mb-0 text-primary" th:text="${'₹' + monthlySalary}">₹15,000</h5>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-12">
+                                    <div class="p-3 bg-light rounded text-center border">
+                                        <span class="small text-muted d-block font-weight-medium text-uppercase" style="font-size: 0.75rem;">Fuel Reimbursements</span>
+                                        <h5 class="fw-bold mb-0 text-danger" th:text="${'₹' + fuelClaims}">₹0</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Vehicle Assigned & Expense Shortcut CTA -->
+                    <div class="col-lg-4">
+                        <div class="card custom-card p-4 h-100 bg-white border shadow-sm rounded-4 d-flex flex-column justify-content-between">
+                            <div>
+                                <h5 class="font-weight-bold mb-3 text-dark text-center"><i class="bi bi-truck text-primary me-2"></i>Assigned Vehicle</h5>
+                                
+                                <div th:if="${agent.vehicle != null}" class="mb-3 text-start">
+                                    <div class="bg-light p-3 rounded-3 mb-3 border">
+                                        <h6 class="font-weight-bold mb-1 text-dark" th:text="${agent.vehicle.model}">Model</h6>
+                                        <span class="badge bg-dark font-weight-bold text-uppercase px-2 py-1 mb-2" th:text="${agent.vehicle.vehicleNumber}">Number</span>
+                                        
+                                        <div class="row g-2 mt-1 pt-2 border-top small text-muted">
+                                            <div class="col-6"><strong>Type:</strong> <span th:text="${agent.vehicle.vehicleType}">Bike</span></div>
+                                            <div class="col-6"><strong>Fuel:</strong> <span th:text="${agent.vehicle.fuelType}">Petrol</span></div>
+                                            <div class="col-6"><strong>Capacity:</strong> <span th:text="${agent.vehicle.maxLoadCapacity + ' kg'}">15.0 kg</span></div>
+                                            <div class="col-6"><strong>Status:</strong> 
+                                                <span class="badge bg-success-subtle text-success px-1" th:text="${agent.vehicle.status}">Status</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div th:if="${agent.vehicle == null}" class="mb-3 text-center">
+                                    <div class="alert alert-warning border border-warning-subtle p-3 rounded-3 mb-3">
+                                        <i class="bi bi-exclamation-triangle-fill text-warning fs-3 mb-2 d-block"></i>
+                                        <span class="text-dark small font-weight-bold">Awaiting Vehicle Allocation</span>
+                                        <p class="text-muted small mb-0 mt-1">Admin has not assigned a vehicle to your account yet.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-center mt-3">
+                                <p class="small text-muted mb-2">Claim fuel expenses by uploading refueling receipts.</p>
+                                <a th:href="@{/agent/expenses}" class="btn btn-outline-dark py-2 w-100 rounded-pill"><i class="bi bi-receipt me-2"></i>Refuel Expenses</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assigned Deliveries -->
+                <div class="card custom-card p-4">
+                    <h5 class="font-weight-bold mb-4">Assigned Delivery Jobs</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Job ID</th>
+                                    <th>Customer</th>
+                                    <th>Pickup Location</th>
+                                    <th>Delivery Destination</th>
+                                    <th>Package Info</th>
+                                    <th>Status</th>
+                                    <th style="width: 380px;">Operation Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="delivery : ${deliveries}">
+                                    <td class="font-weight-bold" th:text="${'#JOB-' + delivery.id}">#JOB-101</td>
+                                    <td>
+                                        <div class="font-weight-bold" th:text="${delivery.customer.name}">Customer Name</div>
+                                        <small class="text-muted" th:text="${delivery.customer.phone}"></small>
+                                    </td>
+                                    <td th:text="${delivery.pickupAddress}">Pickup Address</td>
+                                    <td th:text="${delivery.deliveryAddress}">Delivery Address</td>
+                                    <td th:text="${delivery.packageDetails}">Package info</td>
+                                    <td>
+                                        <span class="badge badge-pill-custom" 
+                                              th:classappend="${#strings.toLowerCase(delivery.status) == 'assigned' ? 'badge-assigned' : 
+                                                                #strings.toLowerCase(delivery.status) == 'picked_up' ? 'badge-pickedup' : 
+                                                                #strings.toLowerCase(delivery.status) == 'in_transit' ? 'badge-intransit' : 
+                                                                'badge-delivered'}"
+                                              th:text="${delivery.status}">Assigned</span>
+                                    </td>
+                                    <td>
+                                        <!-- Acceptance Flow: If status is ASSIGNED but agent hasn't updated or can reject -->
+                                        <div th:if="${delivery.status == 'ASSIGNED'}" class="d-flex gap-2 align-items-center mb-2">
+                                            <!-- Simple simulation details -->
+                                            <form th:action="@{/agent/deliveries/respond}" method="POST" class="d-inline">
+                                                <input type="hidden" name="deliveryId" th:value="${delivery.id}">
+                                                <input type="hidden" name="accept" value="true">
+                                                <button type="submit" class="btn btn-sm btn-success px-3"><i class="bi bi-check2"></i> Accept</button>
+                                            </form>
+                                            <form th:action="@{/agent/deliveries/respond}" method="POST" class="d-inline">
+                                                <input type="hidden" name="deliveryId" th:value="${delivery.id}">
+                                                <input type="hidden" name="accept" value="false">
+                                                <button type="submit" class="btn btn-sm btn-danger px-3"><i class="bi bi-x-lg"></i> Reject</button>
+                                            </form>
+                                        </div>
+
+                                        <!-- Update status / coordinates if accepted/active -->
+                                        <div th:if="${delivery.status != 'DELIVERED'}">
+                                            <form th:action="@{/agent/deliveries/update-status}" method="POST" class="card bg-light p-2 border-0">
+                                                <input type="hidden" name="deliveryId" th:value="${delivery.id}">
+                                                
+                                                <div class="row g-2 mb-2">
+                                                    <!-- New Status Selection -->
+                                                    <div class="col-12">
+                                                        <select class="form-select form-select-sm" name="status" required>
+                                                            <option value="PICKED_UP" th:selected="${delivery.status == 'PICKED_UP'}">PICKED UP (Start)</option>
+                                                            <option value="IN_TRANSIT" th:selected="${delivery.status == 'IN_TRANSIT'}">IN TRANSIT (On Road)</option>
+                                                            <option value="DELIVERED" th:selected="${delivery.status == 'DELIVERED'}">DELIVERED (Done)</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- GPS Simulated Coordinates -->
+                                                    <div class="col-6">
+                                                        <input type="number" step="0.000001" class="form-control form-control-sm" 
+                                                               th:id="${'lat-' + delivery.id}" name="latitude" 
+                                                               th:value="${delivery.currentLatitude != null ? delivery.currentLatitude : (delivery.pickupLatitude != null ? delivery.pickupLatitude : 9.7288)}" 
+                                                               placeholder="Lat" required>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <input type="number" step="0.000001" class="form-control form-control-sm" 
+                                                               th:id="${'lng-' + delivery.id}" name="longitude" 
+                                                               th:value="${delivery.currentLongitude != null ? delivery.currentLongitude : (delivery.pickupLongitude != null ? delivery.pickupLongitude : 77.1215)}" 
+                                                               placeholder="Lng" required>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Simulation Assist buttons to make testing super simple and cool -->
+                                                <div class="d-flex justify-content-between mb-2 gap-1 flex-wrap">
+                                                    <button type="button" class="btn btn-xs btn-outline-secondary py-0 small-text"
+                                                            th:onclick="simulateCoordinate([[${delivery.id}]], [[${delivery.pickupLatitude != null ? delivery.pickupLatitude : 9.7288}]], [[${delivery.pickupLongitude != null ? delivery.pickupLongitude : 77.1215}]])">Pickup (Kattappana)</button>
+                                                    <button type="button" class="btn btn-xs btn-outline-secondary py-0 small-text"
+                                                            th:onclick="simulateCoordinate([[${delivery.id}]], 9.7248, 77.0950)">Transit Pt A</button>
+                                                    <button type="button" class="btn btn-xs btn-outline-secondary py-0 small-text"
+                                                            th:onclick="simulateCoordinate([[${delivery.id}]], 9.7220, 77.0780)">Transit Pt B</button>
+                                                    <button type="button" class="btn btn-xs btn-outline-secondary py-0 small-text"
+                                                            th:onclick="simulateCoordinate([[${delivery.id}]], [[${delivery.destinationLatitude != null ? delivery.destinationLatitude : 9.7208}]], [[${delivery.destinationLongitude != null ? delivery.destinationLongitude : 77.0683}]])">Dest (Kanchiyar)</button>
+                                                </div>
+
+                                                <button type="submit" class="btn btn-sm btn-primary-custom w-100 py-1">
+                                                    <i class="bi bi-arrow-repeat me-1"></i>Update Location & Status
+                                                </button>
+                                            </form>
+                                        </div>
+                                        <div th:if="${delivery.status == 'DELIVERED'}">
+                                            <span class="text-success font-weight-bold"><i class="bi bi-check-all me-1"></i>Job Completed</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(deliveries)}">
+                                    <td colspan="7" class="text-center text-muted py-5">
+                                        <i class="bi bi-inboxes-fill fs-1 text-muted"></i>
+                                        <p class="mt-2 mb-0">No active delivery jobs assigned to you at the moment.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Helper script for GPS coordinate simulation -->
+    <script>
+        function simulateCoordinate(deliveryId, lat, lng) {
+            document.getElementById('lat-' + deliveryId).value = lat;
+            document.getElementById('lng-' + deliveryId).value = lng;
+        }
+
+
+    </script>
+</body>
+</html>

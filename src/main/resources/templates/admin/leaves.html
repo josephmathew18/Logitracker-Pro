@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Management - Admin</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck me-2"></i>LogiTrack <span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/admin/dashboard}" class="sidebar-item "><i class="bi bi-grid"></i>Dashboard</a>
+                <a th:href="@{/admin/agents}" class="sidebar-item "><i class="bi bi-people-fill"></i>Manage Agents</a>
+                <a th:href="@{/admin/vehicles}" class="sidebar-item "><i class="bi bi-truck"></i>Manage Vehicles</a>
+                <a th:href="@{/admin/assign}" class="sidebar-item "><i class="bi bi-plus-circle-fill"></i>Allocate Deliveries</a>
+                <a th:href="@{/admin/monitor}" class="sidebar-item "><i class="bi bi-geo-alt-fill"></i>Monitor Deliveries</a>
+                <a th:href="@{/admin/reports}" class="sidebar-item "><i class="bi bi-file-earmark-bar-graph-fill"></i>Reports & Expenses</a>
+                <a th:href="@{/admin/payments}" class="sidebar-item "><i class="bi bi-wallet2"></i>Salary & Payments</a>
+                <a th:href="@{/admin/refunds}" class="sidebar-item "><i class="bi bi-arrow-counterclockwise"></i>Refund Management</a>
+                <a th:href="@{/admin/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>Feedback Reviews</a>
+                <a th:href="@{/admin/attendance}" class="sidebar-item "><i class="bi bi-calendar-check-fill"></i>Attendance</a>
+                <a th:href="@{/admin/leaves}" class="sidebar-item active"><i class="bi bi-calendar-minus-fill"></i>Leaves</a>
+                <a th:href="@{/admin/maintenance}" class="sidebar-item "><i class="bi bi-wrench"></i>Maintenance</a>
+                <a th:href="@{/admin/performance}" class="sidebar-item "><i class="bi bi-graph-up-arrow"></i>Performance</a>
+                <a th:href="@{/admin/analytics}" class="sidebar-item "><i class="bi bi-pie-chart-fill"></i>Analytics</a>
+                <a th:href="@{/admin/documents}" class="sidebar-item "><i class="bi bi-file-earmark-medical-fill"></i>Documents</a>
+                <a th:href="@{/admin/audit-logs}" class="sidebar-item "><i class="bi bi-shield-check"></i>Audit Logs</a>
+                <a th:href="@{/admin/agents/history}" class="sidebar-item "><i class="bi bi-clock-history"></i>Agent History</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Leave Management Operations')}"></div>
+
+            <div class="content-body">
+                <!-- Notifications -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <span class="app-overview-tag">Review & Approval</span>
+                <h2 class="app-page-title">Agent Leave Requests</h2>
+
+                <div class="row g-4">
+                    <!-- Left: Pending Leave Applications -->
+                    <div class="col-lg-8">
+                        <div class="card custom-card p-4 mb-4">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-clock-history me-2 text-warning"></i>Pending Requests</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-custom align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Agent</th>
+                                            <th>Leave Type</th>
+                                            <th>Dates</th>
+                                            <th>Reason</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="leave : ${pendingLeaves}">
+                                            <td class="font-weight-bold" th:text="${leave.agent.name}">Agent</td>
+                                            <td><span class="badge bg-light text-dark px-2 py-1 font-weight-bold" th:text="${leave.leaveType}">CASUAL</span></td>
+                                            <td th:text="${leave.startDate + ' to ' + leave.endDate}">Dates</td>
+                                            <td th:text="${leave.reason}">Reason</td>
+                                            <td>
+                                                <div class="d-flex gap-2">
+                                                    <button class="btn btn-sm btn-success action-btn" th:data-id="${leave.id}" data-action="approve">
+                                                        <i class="bi bi-check2"></i> Approve
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger action-btn" th:data-id="${leave.id}" data-action="reject">
+                                                        <i class="bi bi-x-lg"></i> Reject
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(pendingLeaves)}">
+                                            <td colspan="5" class="text-center text-muted py-5">
+                                                <i class="bi bi-journal-check fs-2 mb-2 d-block"></i>
+                                                No pending leave applications.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- All Applications Log -->
+                        <div class="card custom-card p-4">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-card-list me-2 text-primary"></i>Application History</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-custom align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Agent</th>
+                                            <th>Type</th>
+                                            <th>Dates</th>
+                                            <th>Status</th>
+                                            <th>Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="leave : ${allLeaves}">
+                                            <td class="font-weight-bold" th:text="${leave.agent.name}">Agent</td>
+                                            <td th:text="${leave.leaveType}">CASUAL</td>
+                                            <td th:text="${leave.startDate + ' to ' + leave.endDate}">Dates</td>
+                                            <td>
+                                                <span class="badge" th:classappend="${leave.status == 'APPROVED' ? 'bg-success' : (leave.status == 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark')}" th:text="${leave.status}">PENDING</span>
+                                            </td>
+                                            <td th:text="${leave.remarks != null ? leave.remarks : '-'}">Remarks</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Leave Balance Quick View -->
+                    <div class="col-lg-4">
+                        <div class="card custom-card p-4">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-shield-lock me-2 text-info"></i>Agent Leave Balances</h5>
+                            <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+                                <div th:each="a : ${agents}" class="list-group-item px-0 py-3">
+                                    <h6 class="font-weight-bold mb-2 text-dark" th:text="${a.name}">Agent Name</h6>
+                                    <div class="row text-center g-2" style="font-size:0.8rem;">
+                                        <div class="col-4">
+                                            <div class="p-2 bg-light border rounded">
+                                                <span class="text-muted d-block font-weight-medium">Casual</span>
+                                                <strong class="text-dark" th:text="${a.id == '1001' ? '10/12' : '12/12'}">12</strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="p-2 bg-light border rounded">
+                                                <span class="text-muted d-block font-weight-medium">Sick</span>
+                                                <strong class="text-dark" th:text="${a.id == '1001' ? '7/8' : '8/8'}">8</strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="p-2 bg-light border rounded">
+                                                <span class="text-muted d-block font-weight-medium">Annual</span>
+                                                <strong class="text-dark">15</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approve / Reject Remarks Modal -->
+    <div class="modal fade" id="remarksModal" tabindex="-1" aria-labelledby="remarksModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-dark text-white" id="modalHeader">
+                    <h5 class="modal-title" id="remarksModalLabel"><i class="bi bi-pencil-square me-2"></i>Process Leave Application</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="#" method="POST" id="processForm">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <div class="modal-body p-4">
+                        <p class="text-muted">Provide comments/remarks for processing this leave request.</p>
+                        <div class="mb-3">
+                            <label for="remarks" class="form-label font-weight-medium text-secondary">Comments</label>
+                            <textarea class="form-control" name="remarks" id="remarks" rows="3" placeholder="Enter remarks (optional)..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light border-0">
+                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-custom px-4" id="submitBtn">Confirm Action</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const remarksModal = new bootstrap.Modal(document.getElementById('remarksModal'));
+            const processForm = document.getElementById('processForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const modalHeader = document.getElementById('modalHeader');
+            const actionBtns = document.querySelectorAll('.action-btn');
+
+            actionBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const action = this.getAttribute('data-action');
+                    
+                    if (action === 'approve') {
+                        modalHeader.className = "modal-header bg-success text-white";
+                        processForm.action = "/admin/leaves/approve/" + id;
+                        submitBtn.className = "btn btn-success px-4";
+                        submitBtn.textContent = "Approve Leave";
+                    } else {
+                        modalHeader.className = "modal-header bg-danger text-white";
+                        processForm.action = "/admin/leaves/reject/" + id;
+                        submitBtn.className = "btn btn-danger px-4";
+                        submitBtn.textContent = "Reject Leave";
+                    }
+
+                    remarksModal.show();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

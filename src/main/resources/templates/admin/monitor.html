@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Active Deliveries - Delivery Service Provider Management System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+    <style>
+        #map {
+            height: 550px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .custom-div-icon {
+            background: transparent;
+            border: none;
+        }
+        .map-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50% 50% 50% 0;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transform: rotate(-45deg);
+            border: 2px solid white;
+            transition: all 0.3s ease;
+        }
+        .map-icon i {
+            transform: rotate(45deg);
+        }
+        .pickup-marker {
+            background: #10b981; /* green */
+        }
+        .dest-marker {
+            background: #ef4444; /* red */
+        }
+        .agent-marker {
+            background: #4f46e5; /* indigo */
+            border-radius: 50%; /* circular for agent */
+            transform: none;
+        }
+        .agent-marker i {
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar (Desktop-only) -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck me-2"></i>LogiTrack <span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/admin/dashboard}" class="sidebar-item "><i class="bi bi-grid"></i>Dashboard</a>
+                <a th:href="@{/admin/agents}" class="sidebar-item "><i class="bi bi-people-fill"></i>Manage Agents</a>
+                <a th:href="@{/admin/vehicles}" class="sidebar-item "><i class="bi bi-truck"></i>Manage Vehicles</a>
+                <a th:href="@{/admin/assign}" class="sidebar-item "><i class="bi bi-plus-circle-fill"></i>Allocate Deliveries</a>
+                <a th:href="@{/admin/monitor}" class="sidebar-item active"><i class="bi bi-geo-alt-fill"></i>Monitor Deliveries</a>
+                <a th:href="@{/admin/reports}" class="sidebar-item "><i class="bi bi-file-earmark-bar-graph-fill"></i>Reports & Expenses</a>
+                <a th:href="@{/admin/payments}" class="sidebar-item "><i class="bi bi-wallet2"></i>Salary & Payments</a>
+                <a th:href="@{/admin/refunds}" class="sidebar-item "><i class="bi bi-arrow-counterclockwise"></i>Refund Management</a>
+                <a th:href="@{/admin/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>Feedback Reviews</a>
+                <a th:href="@{/admin/attendance}" class="sidebar-item "><i class="bi bi-calendar-check-fill"></i>Attendance</a>
+                <a th:href="@{/admin/leaves}" class="sidebar-item "><i class="bi bi-calendar-minus-fill"></i>Leaves</a>
+                <a th:href="@{/admin/maintenance}" class="sidebar-item "><i class="bi bi-wrench"></i>Maintenance</a>
+                <a th:href="@{/admin/performance}" class="sidebar-item "><i class="bi bi-graph-up-arrow"></i>Performance</a>
+                <a th:href="@{/admin/analytics}" class="sidebar-item "><i class="bi bi-pie-chart-fill"></i>Analytics</a>
+                <a th:href="@{/admin/documents}" class="sidebar-item "><i class="bi bi-file-earmark-medical-fill"></i>Documents</a>
+                <a th:href="@{/admin/audit-logs}" class="sidebar-item "><i class="bi bi-shield-check"></i>Audit Logs</a>
+                <a th:href="@{/admin/agents/history}" class="sidebar-item "><i class="bi bi-clock-history"></i>Agent History</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Top App Header (Mobile-only) -->
+            <div class="app-header">
+                <i class="bi bi-list app-header-icon"></i>
+                <h1 class="app-header-title">LogiTrack Pro</h1>
+                <div class="d-flex gap-3">
+                    <i class="bi bi-search app-header-icon"></i>
+                    <i class="bi bi-bell app-header-icon"></i>
+                </div>
+            </div>
+
+            <!-- Desktop Navbar (Desktop-only) -->
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Monitor Deliveries')}"></div>
+
+            <div class="content-body">
+                <div class="row g-4">
+                    <!-- Active Deliveries Table -->
+                    <div class="col-lg-7">
+                        <div class="card custom-card p-4">
+                            <h5 class="font-weight-bold mb-3">Shipment Dispatch Monitor</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-custom align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Agent</th>
+                                            <th>Destination</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="delivery : ${deliveries}" th:if="${delivery.status != 'PENDING' && delivery.status != 'REJECTED' && delivery.status != 'CANCELLED' && delivery.status != 'DELIVERED'}">
+                                            <td class="font-weight-bold" th:text="${'#DEL-' + delivery.id}">#DEL-101</td>
+                                            <td>
+                                                <div th:if="${delivery.agent != null}">
+                                                    <div class="font-weight-bold" th:text="${delivery.agent?.name}">Agent Name</div>
+                                                    <small class="text-muted" th:text="${delivery.vehicle != null ? delivery.vehicle?.model : 'No Vehicle'}"></small>
+                                                </div>
+                                                <div th:if="${delivery.agent == null}">
+                                                    <span class="text-muted small">No Agent Assigned</span>
+                                                </div>
+                                            </td>
+                                            <td th:text="${delivery.deliveryAddress}">Delivery destination</td>
+                                            <td>
+                                                <span class="badge badge-pill-custom" 
+                                                      th:classappend="${#strings.toLowerCase(delivery.status) == 'assigned' ? 'badge-assigned' : 
+                                                                        #strings.toLowerCase(delivery.status) == 'picked_up' ? 'badge-pickedup' : 
+                                                                        #strings.toLowerCase(delivery.status) == 'in_transit' ? 'badge-intransit' : 
+                                                                        'badge-delivered'}"
+                                                      th:text="${delivery.status}">Assigned</span>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-primary-custom" 
+                                                        th:onclick="initiateTracking([[${delivery.id}]], [[${delivery.status}]])">
+                                                    <i class="bi bi-geo-fill"></i> Track Live
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(deliveries)}">
+                                            <td colspan="5" class="text-center text-muted py-5">No active dispatches.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Map Panel -->
+                    <div class="col-lg-5">
+                        <div class="card custom-card p-4 h-100">
+                            <h5 class="font-weight-bold mb-2">Live Location Map</h5>
+                            <p class="text-muted small mb-3" id="tracking-info">Select a delivery to begin GPS monitoring.</p>
+                            
+                            <!-- Leaflet Map Container -->
+                            <div id="map"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sticky Bottom Tab Navigation (Mobile-only) -->
+            <div class="bottom-nav">
+                <a th:href="@{/admin/dashboard}" class="bottom-nav-item active">
+                    <div class="bottom-nav-icon-container">
+                        <i class="bi bi-grid"></i>
+                    </div>
+                    <span>Home</span>
+                </a>
+                <a th:href="@{/admin/assign}" class="bottom-nav-item">
+                    <div class="bottom-nav-icon-container">
+                        <i class="bi bi-clipboard2-data"></i>
+                    </div>
+                    <span>Requests</span>
+                </a>
+                <a th:href="@{/admin/agents}" class="bottom-nav-item">
+                    <div class="bottom-nav-icon-container">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <span>Agents</span>
+                </a>
+                <a th:href="@{/logout}" class="bottom-nav-item text-danger">
+                    <div class="bottom-nav-icon-container text-danger">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </div>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS for Maps -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Tracking Script -->
+    <script>
+        let map;
+        let pickupMarker;
+        let destMarker;
+        let agentMarker;
+        let routeLine;
+        let refreshInterval;
+        
+        let routeCoords = [];
+        let totalDistance = 0; // km
+        let totalDuration = 0; // mins
+
+        function getHaversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function findClosestPointIndex(agentLat, agentLng, coords) {
+            let minDistance = Infinity;
+            let closestIndex = 0;
+            for (let i = 0; i < coords.length; i++) {
+                const dist = getHaversineDistance(agentLat, agentLng, coords[i][0], coords[i][1]);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestIndex = i;
+                }
+            }
+            return closestIndex;
+        }
+
+        function calculateRemainingDistance(closestIndex, agentLat, agentLng, coords) {
+            if (coords.length === 0) return 0;
+            let distance = getHaversineDistance(agentLat, agentLng, coords[closestIndex][0], coords[closestIndex][1]);
+            for (let i = closestIndex; i < coords.length - 1; i++) {
+                distance += getHaversineDistance(coords[i][0], coords[i][1], coords[i + 1][0], coords[i + 1][1]);
+            }
+            return distance;
+        }
+
+        function formatDuration(minutes) {
+            if (minutes <= 0) return "0 mins";
+            if (minutes < 1) return "1 min";
+            const h = Math.floor(minutes / 60);
+            const m = Math.round(minutes % 60);
+            if (h > 0) {
+                return h + " hr " + m + " mins";
+            }
+            return m + " mins";
+        }
+
+        // Initialize Leaflet Map centered on default Kerala location
+        function initMap(lat = 9.7288, lng = 77.1215) {
+            if (!map) {
+                map = L.map('map').setView([lat, lng], 11);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+            } else {
+                map.setView([lat, lng], 11);
+            }
+        }
+
+        // Run map setup on load
+        window.addEventListener('DOMContentLoaded', () => {
+            initMap();
+        });
+
+        function initiateTracking(deliveryId, currentStatus) {
+            document.getElementById('tracking-info').innerHTML = `Tracking delivery <strong>#DEL-${deliveryId}</strong> (Current Status: <span class="text-primary">${currentStatus}</span>). Reloading GPS coordinates...`;
+            
+            // Clear existing intervals
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+            
+            // Clean up existing markers & routes
+            if (pickupMarker) map.removeLayer(pickupMarker);
+            if (destMarker) map.removeLayer(destMarker);
+            if (agentMarker) map.removeLayer(agentMarker);
+            if (routeLine) map.removeLayer(routeLine);
+            
+            pickupMarker = null;
+            destMarker = null;
+            agentMarker = null;
+            routeLine = null;
+            routeCoords = [];
+
+            // Custom DivIcons for styling
+            const pickupIcon = L.divIcon({
+                html: '<div class="map-icon pickup-marker"><i class="bi bi-shop"></i></div>',
+                className: 'custom-div-icon',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
+            });
+
+            const destIcon = L.divIcon({
+                html: '<div class="map-icon dest-marker"><i class="bi bi-geo-alt-fill"></i></div>',
+                className: 'custom-div-icon',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
+            });
+
+            // Fetch delivery coordinates and routing from backend Routing REST API
+            fetch(`/api/routing/route/${deliveryId}`)
+                .then(res => {
+                    if (!res.ok) throw new Error("Routing API error status: " + res.status);
+                    return res.json();
+                })
+                .then(data => {
+                    if (data && data.coordinates) {
+                        routeCoords = data.coordinates;
+                        totalDistance = data.distance;
+                        totalDuration = data.duration;
+
+                        // Plot Pickup & Destination markers
+                        const pCoord = routeCoords[0];
+                        const dCoord = routeCoords[routeCoords.length - 1];
+
+                        pickupMarker = L.marker(pCoord, { icon: pickupIcon }).addTo(map)
+                            .bindPopup("<b>Pickup Point</b>");
+                        destMarker = L.marker(dCoord, { icon: destIcon }).addTo(map)
+                            .bindPopup("<b>Destination Point</b>");
+
+                        // Draw road route polyline
+                        routeLine = L.polyline(routeCoords, { color: '#4f46e5', weight: 5, opacity: 0.8 }).addTo(map);
+
+                        // Auto-fit bounds
+                        map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
+
+                        document.getElementById('tracking-info').innerHTML = `Tracking delivery <strong>#DEL-${deliveryId}</strong> (Status: <span class="text-primary">${currentStatus}</span>). Route distance: <strong>${totalDistance.toFixed(2)} km</strong>, Est. Duration: <strong>${formatDuration(totalDuration)}</strong>.`;
+
+                        // Start agent coordinates polling
+                        fetchCoordinates(deliveryId);
+                        refreshInterval = setInterval(() => fetchCoordinates(deliveryId), 5000);
+                    }
+                })
+                .catch(err => {
+                    console.error("OSRM Route load error: ", err);
+                    document.getElementById('tracking-info').innerHTML = `<span class="text-danger">Routing service error. Retrying...</span>`;
+                    setTimeout(() => initiateTracking(deliveryId, currentStatus), 5000);
+                });
+        }
+
+        function fetchCoordinates(deliveryId) {
+            fetch(`/api/tracking/get/${deliveryId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const latestPoint = data[0]; 
+                        const lat = latestPoint.latitude;
+                        const lng = latestPoint.longitude;
+                        const status = latestPoint.status;
+
+                        // Define agent marker icon
+                        const agentIcon = L.divIcon({
+                            html: '<div class="map-icon agent-marker"><i class="bi bi-truck"></i></div>',
+                            className: 'custom-div-icon',
+                            iconSize: [32, 32],
+                            iconAnchor: [16, 16]
+                        });
+
+                        // If marker exists, move it. Otherwise create it.
+                        if (agentMarker) {
+                            agentMarker.setLatLng([lat, lng]);
+                            agentMarker.setTooltipContent(`Delivery #DEL-${deliveryId} - Status: ${status}`);
+                        } else {
+                            agentMarker = L.marker([lat, lng], { icon: agentIcon }).addTo(map)
+                                .bindTooltip(`Delivery #DEL-${deliveryId} - Status: ${status}`, { permanent: true, direction: 'top' })
+                                .openTooltip();
+                        }
+
+                        // Calculate remaining stats
+                        if (routeCoords.length > 0) {
+                            const closestIdx = findClosestPointIndex(lat, lng, routeCoords);
+                            const remDist = calculateRemainingDistance(closestIdx, lat, lng, routeCoords);
+                            const remDur = totalDuration * (remDist / totalDistance);
+
+                            document.getElementById('tracking-info').innerHTML = `Tracking delivery <strong>#DEL-${deliveryId}</strong> (Status: <span class="text-primary">${status}</span>). <br/>Remaining: <strong>${remDist.toFixed(2)} km</strong> (~<strong>${formatDuration(remDur)}</strong>). Location: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                        }
+
+                        // Stop polling if status DELIVERED
+                        if (status === 'DELIVERED') {
+                            clearInterval(refreshInterval);
+                            const destCoord = routeCoords.length > 0 ? routeCoords[routeCoords.length - 1] : [lat, lng];
+                            agentMarker.setLatLng(destCoord);
+                            agentMarker.setTooltipContent("Job Completed Successfully!");
+                            document.getElementById('tracking-info').innerHTML = `Delivery <strong>#DEL-${deliveryId}</strong> was completed successfully!`;
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error("GPS Fetch Error: ", err);
+                });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refund Control Center - LogiTrack Pro</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck me-2"></i>LogiTrack <span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/admin/dashboard}" class="sidebar-item "><i class="bi bi-grid"></i>Dashboard</a>
+                <a th:href="@{/admin/agents}" class="sidebar-item "><i class="bi bi-people-fill"></i>Manage Agents</a>
+                <a th:href="@{/admin/vehicles}" class="sidebar-item "><i class="bi bi-truck"></i>Manage Vehicles</a>
+                <a th:href="@{/admin/assign}" class="sidebar-item "><i class="bi bi-plus-circle-fill"></i>Allocate Deliveries</a>
+                <a th:href="@{/admin/monitor}" class="sidebar-item "><i class="bi bi-geo-alt-fill"></i>Monitor Deliveries</a>
+                <a th:href="@{/admin/reports}" class="sidebar-item "><i class="bi bi-file-earmark-bar-graph-fill"></i>Reports & Expenses</a>
+                <a th:href="@{/admin/payments}" class="sidebar-item "><i class="bi bi-wallet2"></i>Salary & Payments</a>
+                <a th:href="@{/admin/refunds}" class="sidebar-item active"><i class="bi bi-arrow-counterclockwise"></i>Refund Management</a>
+                <a th:href="@{/admin/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>Feedback Reviews</a>
+                <a th:href="@{/admin/attendance}" class="sidebar-item "><i class="bi bi-calendar-check-fill"></i>Attendance</a>
+                <a th:href="@{/admin/leaves}" class="sidebar-item "><i class="bi bi-calendar-minus-fill"></i>Leaves</a>
+                <a th:href="@{/admin/maintenance}" class="sidebar-item "><i class="bi bi-wrench"></i>Maintenance</a>
+                <a th:href="@{/admin/performance}" class="sidebar-item "><i class="bi bi-graph-up-arrow"></i>Performance</a>
+                <a th:href="@{/admin/analytics}" class="sidebar-item "><i class="bi bi-pie-chart-fill"></i>Analytics</a>
+                <a th:href="@{/admin/documents}" class="sidebar-item "><i class="bi bi-file-earmark-medical-fill"></i>Documents</a>
+                <a th:href="@{/admin/audit-logs}" class="sidebar-item "><i class="bi bi-shield-check"></i>Audit Logs</a>
+                <a th:href="@{/admin/agents/history}" class="sidebar-item "><i class="bi bi-clock-history"></i>Agent History</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Desktop Navbar -->
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Refund Control Dashboard')}"></div>
+
+            <!-- Content Body -->
+            <div class="content-body">
+                <!-- Notifications -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <span class="app-overview-tag">Reversal Control</span>
+                <h2 class="app-page-title">Cancellations & Payout Refunds</h2>
+
+                <!-- Metrics Grid -->
+                <div class="metrics-grid mb-4">
+                    <div class="metric-card">
+                        <div class="metric-card-top">
+                            <div class="metric-icon-box icon-cyan">
+                                <i class="bi bi-x-octagon-fill"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="metric-label">Cancelled Orders</div>
+                            <h3 class="metric-value" th:text="${totalCancelledOrders}">0</h3>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-card-top">
+                            <div class="metric-icon-box icon-green">
+                                <i class="bi bi-cash-stack"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="metric-label">Total Refunded</div>
+                            <h3 class="metric-value text-success" th:text="${'₹' + totalRefundAmount}">₹0.00</h3>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-card-top">
+                            <div class="metric-icon-box icon-amber">
+                                <i class="bi bi-hourglass-split"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="metric-label">Pending Reviews</div>
+                            <h3 class="metric-value text-warning" th:text="${pendingRefundRequests}">0</h3>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-card-top">
+                            <div class="metric-icon-box icon-blue">
+                                <i class="bi bi-shield-fill-check"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="metric-label">Successful Refunds</div>
+                            <h3 class="metric-value text-primary" th:text="${successfulRefunds}">0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Refund Requests and Inquiries -->
+                <div class="row g-4">
+                    <!-- Manual/Pending Approvals -->
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm rounded-4 mb-4">
+                            <div class="card-header bg-dark text-white rounded-top-4 py-3">
+                                <h5 class="card-title mb-0"><i class="bi bi-patch-question me-2"></i>Pending Manual Refund Requests (COD/CARD)</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light text-muted small">
+                                            <tr>
+                                                <th class="ps-4">Refund ID</th>
+                                                <th>Order Details</th>
+                                                <th>Customer</th>
+                                                <th>Amount</th>
+                                                <th>Status</th>
+                                                <th class="text-end pe-4">Override Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="small">
+                                            <tr th:each="ref : ${refunds}" th:if="${ref.refundStatus == 'PENDING' || ref.refundStatus == 'PROCESSING'}">
+                                                <td class="ps-4 font-weight-bold text-dark" th:text="${ref.refundId}">1</td>
+                                                <td>
+                                                    <span class="font-weight-bold text-dark" th:text="${ref.order.productName}">Product</span>
+                                                    <br/>
+                                                    <span class="text-muted small" th:text="${'Order: #' + ref.order.orderId}">Order ID</span>
+                                                </td>
+                                                <td>
+                                                    <span th:text="${ref.customer.name}">Customer</span>
+                                                    <br/>
+                                                    <span class="text-muted small" th:text="${ref.customer.phone}">Phone</span>
+                                                </td>
+                                                <td class="font-weight-bold text-dark" th:text="${'₹' + ref.refundAmount}">₹0.00</td>
+                                                <td>
+                                                    <span class="badge bg-warning text-dark rounded-pill" th:text="${ref.refundStatus}">PENDING</span>
+                                                </td>
+                                                <td class="text-end pe-4">
+                                                    <form th:action="@{/admin/refunds/approve/{id}(id=${ref.refundId})}" method="POST" class="d-inline">
+                                                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 font-weight-bold me-1">
+                                                            <i class="bi bi-check-lg me-1"></i>Approve
+                                                        </button>
+                                                    </form>
+                                                    <form th:action="@{/admin/refunds/reject/{id}(id=${ref.refundId})}" method="POST" class="d-inline">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 font-weight-bold">
+                                                            <i class="bi bi-x me-1"></i>Reject
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                            <!-- Fallback if empty -->
+                                            <tr id="noPendingRefundsRow">
+                                                <td colspan="6" class="text-center text-muted py-4">No manual refund requests pending review.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search Filter Form -->
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm rounded-4 mb-4 p-3 bg-white">
+                            <h6 class="font-weight-bold mb-3 text-secondary"><i class="bi bi-filter-left me-1"></i>Search & Search Refunds History</h6>
+                            <div class="row g-3 align-items-center">
+                                <div class="col-md-9">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0 rounded-start-pill"><i class="bi bi-search"></i></span>
+                                        <input type="text" id="refundSearchInput" class="form-control bg-light border-0 rounded-end-pill" placeholder="Search by Refund ID, Payment ID, Order ID, Customer Name...">
+                                    </div>
+                                </div>
+                                <div class="col-md-3 text-end">
+                                    <button id="resetRefundFilters" class="btn btn-outline-secondary rounded-pill w-100">
+                                        <i class="bi bi-x-circle me-1"></i> Reset Filters
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Complete Refunds Ledger -->
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm rounded-4 mb-4">
+                            <div class="card-header bg-white py-3 border-0">
+                                <h5 class="card-title text-dark mb-0"><i class="bi bi-journals me-2"></i>Refund Transaction Archives</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light text-muted small">
+                                            <tr>
+                                                <th class="ps-4">Refund ID</th>
+                                                <th>Customer</th>
+                                                <th>Order ID</th>
+                                                <th>Razorpay Payment ID</th>
+                                                <th>Razorpay Refund ID</th>
+                                                <th>Refunded Amount</th>
+                                                <th>Status</th>
+                                                <th class="pe-4">Date Logged</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="small" id="refundHistoryBody">
+                                            <tr th:each="ref : ${refunds}">
+                                                <td class="ps-4 font-weight-bold text-dark" th:text="${'#REF-' + ref.refundId}">#REF-1</td>
+                                                <td>
+                                                    <span class="font-weight-bold text-dark" th:text="${ref.customer.name}">Customer</span>
+                                                    <br/>
+                                                    <span class="text-muted small" th:text="${ref.customer.phone}">Phone</span>
+                                                </td>
+                                                <td th:text="${'#' + ref.order.orderId}">#101</td>
+                                                <td th:text="${ref.razorpayPaymentId != null ? ref.razorpayPaymentId : 'N/A'}">pay_XYZ</td>
+                                                <td th:text="${ref.razorpayRefundId != null ? ref.razorpayRefundId : 'N/A'}">ref_ABC</td>
+                                                <td class="font-weight-bold text-success" th:text="${'₹' + ref.refundAmount}">₹0.00</td>
+                                                <td>
+                                                    <span class="badge rounded-pill" 
+                                                          th:classappend="${ref.refundStatus == 'REFUNDED' ? 'bg-success' : 
+                                                                            ref.refundStatus == 'PENDING' ? 'bg-warning text-dark' : 
+                                                                            ref.refundStatus == 'PROCESSING' ? 'bg-info' : 'bg-danger'}" 
+                                                          th:text="${ref.refundStatus}">SUCCESS</span>
+                                                </td>
+                                                <td class="pe-4" th:text="${#temporals.format(ref.refundDate, 'yyyy-MM-dd HH:mm')}">2026-06-16 12:00</td>
+                                            </tr>
+                                            <tr th:if="${#lists.isEmpty(refunds)}">
+                                                <td colspan="8" class="text-center text-muted py-4">No refund transactions recorded.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Search/Filtering Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if there are active pending rows, hide/show the placeholder row
+            const tableRows = document.querySelectorAll('#refundHistoryBody tr');
+            const pendingRows = document.querySelectorAll('tbody.small tr[th\\:each]'); // dynamic check in browser JS
+            
+            // Client-side search implementation
+            const searchInput = document.getElementById('refundSearchInput');
+            const resetBtn = document.getElementById('resetRefundFilters');
+            const historyRows = document.querySelectorAll('#refundHistoryBody tr');
+
+            function filterRefunds() {
+                const query = searchInput.value.toLowerCase().trim();
+                historyRows.forEach(row => {
+                    if (row.cells.length < 5) return;
+                    const text = row.innerText.toLowerCase();
+                    if (text.includes(query)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', filterRefunds);
+            }
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    searchInput.value = '';
+                    filterRefunds();
+                });
+            }
+
+            // Hide H2 empty row warning if items exist in DOM
+            const pendingTableBody = document.querySelector('table tbody');
+            const rowCount = pendingTableBody.rows.length;
+            const noPendingRow = document.getElementById('noPendingRefundsRow');
+            if (rowCount > 2 && noPendingRow) {
+                // More than just the placeholder row
+                noPendingRow.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

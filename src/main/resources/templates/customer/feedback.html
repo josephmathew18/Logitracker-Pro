@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Feedback - LogiTrack Pro</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+    <style>
+        .star-rating .bi {
+            font-size: 1.2rem;
+        }
+        .star-rating-interactive .bi {
+            cursor: pointer;
+            font-size: 2rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck-flatbed me-2"></i>LogiTrack<span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/customer/dashboard}" class="sidebar-item "><i class="bi bi-grid-fill"></i>Client Dashboard</a>
+                <a th:href="@{/customer/orders}" class="sidebar-item "><i class="bi bi-cart-plus-fill"></i>Create Delivery Order</a>
+                <a th:href="@{/customer/payments}" class="sidebar-item "><i class="bi bi-credit-card-2-front"></i>Transactions</a>
+                <a th:href="@{/customer/cancellations}" class="sidebar-item "><i class="bi bi-x-octagon-fill"></i>Cancellations</a>
+                <a th:href="@{/customer/feedback}" class="sidebar-item active"><i class="bi bi-star-fill"></i>My Feedback</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Feedback Management')}"></div>
+
+            <div class="content-body">
+                <!-- Notifications -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <span class="app-overview-tag">Rating & Review History</span>
+                <h2 class="app-page-title">My Rating History</h2>
+
+                <div class="card custom-card p-4 bg-white shadow-sm border-0 rounded-4">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom align-middle">
+                            <thead>
+                                <tr>
+                                    <th class="ps-4">Order ID</th>
+                                    <th>Category</th>
+                                    <th>Rating</th>
+                                    <th>Comments</th>
+                                    <th>Submitted On</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="feedback : ${feedbacks}" th:with="isEditable=${feedback.createdAt.plusHours(24).isAfter(T(java.time.LocalDateTime).now())}">
+                                    <td class="ps-4 font-weight-bold text-primary" th:text="${'#ORD-' + feedback.order.orderId}">#ORD-101</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark px-3 py-1 rounded-pill" th:text="${feedback.category}">Category</span>
+                                    </td>
+                                    <td>
+                                        <div class="star-rating text-warning">
+                                            <i th:each="starNum : ${#numbers.sequence(1, 5)}" 
+                                               th:class="${starNum <= feedback.rating ? 'bi bi-star-fill' : 'bi bi-star'}"></i>
+                                        </div>
+                                    </td>
+                                    <td th:text="${feedback.comments != null && !feedback.comments.isEmpty() ? feedback.comments : 'No comments left.'}">Comments</td>
+                                    <td th:text="${#temporals.format(feedback.createdAt, 'yyyy-MM-dd HH:mm')}">Date</td>
+                                    <td class="text-end pe-4">
+                                        <button th:if="${isEditable}" 
+                                                class="btn btn-sm btn-outline-warning rounded-pill px-3 font-weight-bold" 
+                                                data-bs-toggle="modal" 
+                                                th:data-bs-target="${'#editFeedbackModal' + feedback.feedbackId}">
+                                            <i class="bi bi-pencil-square me-1"></i>Edit
+                                        </button>
+                                        <span th:if="${!isEditable}" class="text-muted small italic"><i class="bi bi-lock-fill me-1"></i>Locked</span>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(feedbacks)}">
+                                    <td colspan="6" class="text-center text-muted py-5">
+                                        <i class="bi bi-star fs-1 text-muted"></i>
+                                        <p class="mt-2 mb-0">You have not submitted any feedback yet.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Feedback Modals -->
+    <div th:each="feedback : ${feedbacks}" th:with="isEditable=${feedback.createdAt.plusHours(24).isAfter(T(java.time.LocalDateTime).now())}">
+        <div th:if="${isEditable}" 
+             class="modal fade text-start" 
+             th:id="${'editFeedbackModal' + feedback.feedbackId}" 
+             tabindex="-1" 
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 rounded-4 shadow-lg text-dark">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title font-weight-bold text-dark">Edit Feedback</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form th:action="@{/customer/feedback/submit}" method="POST" class="needs-validation" novalidate>
+                        <input type="hidden" name="feedbackId" th:value="${feedback.feedbackId}">
+                        <div class="modal-body pt-3">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label font-weight-bold small text-muted">Order ID</label>
+                                    <input type="text" class="form-control rounded-pill bg-light" th:value="${'#ORD-' + feedback.order.orderId}" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label font-weight-bold small text-muted">Product / Package</label>
+                                    <input type="text" class="form-control rounded-pill bg-light" th:value="${feedback.order.productName != null ? feedback.order.productName : feedback.order.packageDescription}" readonly>
+                                </div>
+                            </div>
+                            
+                            <div class="my-3 text-center">
+                                <label class="form-label font-weight-bold small d-block mb-2 text-muted">Your Rating</label>
+                                <div class="star-rating-interactive d-flex gap-1 justify-content-center text-warning">
+                                    <i th:each="starNum : ${#numbers.sequence(1, 5)}"
+                                       th:id="${'star-' + feedback.feedbackId + '-' + starNum}"
+                                       th:class="${starNum <= feedback.rating ? 'bi bi-star-fill star-edit-icon' : 'bi bi-star star-edit-icon'}"
+                                       th:onclick="'setEditRating(' + ${feedback.feedbackId} + ', ' + ${starNum} + ')'"></i>
+                                </div>
+                                <input type="hidden" name="rating" th:id="${'ratingEditInput-' + feedback.feedbackId}" th:value="${feedback.rating}" required>
+                                <div class="invalid-feedback text-center">Please select a star rating.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label font-weight-bold small text-muted">Feedback Category</label>
+                                <select class="form-select rounded-pill" name="category" required>
+                                    <option value="Delivery Service" th:selected="${feedback.category == 'Delivery Service'}">Delivery Service</option>
+                                    <option value="Agent Behavior" th:selected="${feedback.category == 'Agent Behavior'}">Agent Behavior</option>
+                                    <option value="Product Handling" th:selected="${feedback.category == 'Product Handling'}">Product Handling</option>
+                                    <option value="Delivery Time" th:selected="${feedback.category == 'Delivery Time'}">Delivery Time</option>
+                                    <option value="Overall Experience" th:selected="${feedback.category == 'Overall Experience'}">Overall Experience</option>
+                                </select>
+                                <div class="invalid-feedback">Please select a category.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label font-weight-bold small text-muted">Comments (Optional)</label>
+                                <textarea class="form-control rounded-4" name="comments" rows="3" maxlength="500" placeholder="Tell us more about your experience..." th:text="${feedback.comments}"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal" style="font-size: 0.85rem; font-weight: 600;">Close</button>
+                            <button type="submit" class="btn btn-warning px-4 rounded-pill text-dark font-weight-bold" style="font-size: 0.85rem; font-weight: 600;">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function setEditRating(feedbackId, ratingValue) {
+            const ratingInput = document.getElementById('ratingEditInput-' + feedbackId);
+            ratingInput.value = ratingValue;
+            ratingInput.classList.remove('is-invalid');
+            
+            const modalEl = document.getElementById('editFeedbackModal' + feedbackId);
+            const stars = modalEl.querySelectorAll('.star-edit-icon');
+            
+            stars.forEach((star, index) => {
+                if (index < ratingValue) {
+                    star.classList.remove('bi-star');
+                    star.classList.add('bi-star-fill');
+                } else {
+                    star.classList.remove('bi-star-fill');
+                    star.classList.add('bi-star');
+                }
+            });
+        }
+
+        // Bootstrap form validation
+        (() => {
+            'use strict'
+            const forms = document.querySelectorAll('.needs-validation')
+            Array.from(forms).forEach(form => {
+                form.addEventListener('submit', event => {
+                    const ratingInput = form.querySelector('input[name="rating"]');
+                    if (ratingInput && (!ratingInput.value || ratingInput.value === '0' || ratingInput.value === '')) {
+                        ratingInput.classList.add('is-invalid');
+                        event.preventDefault();
+                        event.stopPropagation();
+                    } else if (ratingInput) {
+                        ratingInput.classList.remove('is-invalid');
+                    }
+
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })()
+    </script>
+</body>
+
+</html>

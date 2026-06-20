@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Reports & Analytics - LogiTrack Pro</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck me-2"></i>LogiTrack <span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/admin/dashboard}" class="sidebar-item "><i class="bi bi-grid"></i>Dashboard</a>
+                <a th:href="@{/admin/agents}" class="sidebar-item "><i class="bi bi-people-fill"></i>Manage Agents</a>
+                <a th:href="@{/admin/vehicles}" class="sidebar-item "><i class="bi bi-truck"></i>Manage Vehicles</a>
+                <a th:href="@{/admin/assign}" class="sidebar-item "><i class="bi bi-plus-circle-fill"></i>Allocate Deliveries</a>
+                <a th:href="@{/admin/monitor}" class="sidebar-item "><i class="bi bi-geo-alt-fill"></i>Monitor Deliveries</a>
+                <a th:href="@{/admin/reports}" class="sidebar-item "><i class="bi bi-file-earmark-bar-graph-fill"></i>Reports & Expenses</a>
+                <a th:href="@{/admin/payments}" class="sidebar-item "><i class="bi bi-wallet2"></i>Salary & Payments</a>
+                <a th:href="@{/admin/refunds}" class="sidebar-item "><i class="bi bi-arrow-counterclockwise"></i>Refund Management</a>
+                <a th:href="@{/admin/feedback}" class="sidebar-item active"><i class="bi bi-star-fill"></i>Feedback Reviews</a>
+                <a th:href="@{/admin/attendance}" class="sidebar-item "><i class="bi bi-calendar-check-fill"></i>Attendance</a>
+                <a th:href="@{/admin/leaves}" class="sidebar-item "><i class="bi bi-calendar-minus-fill"></i>Leaves</a>
+                <a th:href="@{/admin/maintenance}" class="sidebar-item "><i class="bi bi-wrench"></i>Maintenance</a>
+                <a th:href="@{/admin/performance}" class="sidebar-item "><i class="bi bi-graph-up-arrow"></i>Performance</a>
+                <a th:href="@{/admin/analytics}" class="sidebar-item "><i class="bi bi-pie-chart-fill"></i>Analytics</a>
+                <a th:href="@{/admin/documents}" class="sidebar-item "><i class="bi bi-file-earmark-medical-fill"></i>Documents</a>
+                <a th:href="@{/admin/audit-logs}" class="sidebar-item "><i class="bi bi-shield-check"></i>Audit Logs</a>
+                <a th:href="@{/admin/agents/history}" class="sidebar-item "><i class="bi bi-clock-history"></i>Agent History</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Feedback Analytics & Reports')}"></div>
+
+            <div class="content-body">
+                <!-- Header -->
+                <div class="d-flex align-items-center mb-4">
+                    <a th:href="@{/admin/feedback}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 me-3">
+                        <i class="bi bi-arrow-left me-1"></i>Back to Reviews
+                    </a>
+                    <div>
+                        <span class="app-overview-tag">Rating Trends & Agent Metrics</span>
+                        <h2 class="app-page-title mb-0">Rating Reports & Analytics</h2>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Rating Analytics (Star Distribution) -->
+                    <div class="col-lg-6">
+                        <div class="card custom-card p-4 bg-white shadow-sm border-0 rounded-4 h-100">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Rating Distribution</h5>
+                            <div class="py-3">
+                                <div th:each="entry : ${ratingAnalytics}" class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="small font-weight-bold" th:text="${entry.key + ' Stars'}">5 Stars</span>
+                                        <span class="small text-muted" th:text="${entry.value + ' reviews'}">0 reviews</span>
+                                    </div>
+                                    <!-- Simple progress bar representing the percentage -->
+                                    <div class="progress rounded-pill" style="height: 10px;">
+                                        <!-- Calculate percentage logic -->
+                                        <div class="progress-bar bg-warning rounded-pill" 
+                                             role="progressbar" 
+                                             th:style="'width: ' + (${entry.value} > 0 ? (${entry.value} * 100 / ${#maps.size(ratingAnalytics)}) : 0) + '%'"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Satisfaction Report (Category breakdown) -->
+                    <div class="col-lg-6">
+                        <div class="card custom-card p-4 bg-white shadow-sm border-0 rounded-4 h-100">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-bookmark-star-fill text-warning me-2"></i>Satisfaction by Category</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-custom align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Reviews Count</th>
+                                            <th>Average Rating</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="cat : ${customerSatisfaction}">
+                                            <td class="font-weight-semibold" th:text="${cat.category}">Category</td>
+                                            <td th:text="${cat.totalFeedbacks}">0</td>
+                                            <td>
+                                                <strong class="text-warning" th:text="${cat.averageRating}">0.00</strong>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(customerSatisfaction)}">
+                                            <td colspan="3" class="text-center text-muted">No data available.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Agent Performance Report -->
+                    <div class="col-lg-7">
+                        <div class="card custom-card p-4 bg-white shadow-sm border-0 rounded-4">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-people-fill text-success me-2"></i>Agent Performance Leaderboard</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-custom align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Agent ID</th>
+                                            <th>Agent Name</th>
+                                            <th>Total Feedbacks</th>
+                                            <th>Average Rating</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="agentPerf : ${agentPerformance}">
+                                            <td class="font-weight-bold text-primary" th:text="${agentPerf.agentId}">1001</td>
+                                            <td>
+                                                <span class="font-weight-semibold text-dark" th:text="${agentPerf.agentName}">Agent Name</span><br>
+                                                <small class="text-muted" th:text="${agentPerf.agentPhone}"></small>
+                                            </td>
+                                            <td th:text="${agentPerf.totalFeedbacks}">0</td>
+                                            <td>
+                                                <strong class="text-warning" th:text="${agentPerf.averageRating}">0.00</strong>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(agentPerformance)}">
+                                            <td colspan="4" class="text-center text-muted py-4">No agent reviews logged.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Feedback Report -->
+                    <div class="col-lg-5">
+                        <div class="card custom-card p-4 bg-white shadow-sm border-0 rounded-4">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-calendar-check-fill text-danger me-2"></i>Monthly Feedback Trends</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-custom align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>Total Feedbacks</th>
+                                            <th>Average Rating</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="m : ${monthlyReport}">
+                                            <td class="font-weight-semibold" th:text="${m.month}">Month</td>
+                                            <td th:text="${m.totalFeedbacks}">0</td>
+                                            <td>
+                                                <strong class="text-warning" th:text="${m.averageRating}">0.00</strong>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(monthlyReport)}">
+                                            <td colspan="3" class="text-center text-muted py-4">No trends data available.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

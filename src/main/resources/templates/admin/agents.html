@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Agents - Delivery Service Provider Management System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar (Desktop-only) -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck me-2"></i>LogiTrack <span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/admin/dashboard}" class="sidebar-item "><i class="bi bi-grid"></i>Dashboard</a>
+                <a th:href="@{/admin/agents}" class="sidebar-item active"><i class="bi bi-people-fill"></i>Manage Agents</a>
+                <a th:href="@{/admin/vehicles}" class="sidebar-item "><i class="bi bi-truck"></i>Manage Vehicles</a>
+                <a th:href="@{/admin/assign}" class="sidebar-item "><i class="bi bi-plus-circle-fill"></i>Allocate Deliveries</a>
+                <a th:href="@{/admin/monitor}" class="sidebar-item "><i class="bi bi-geo-alt-fill"></i>Monitor Deliveries</a>
+                <a th:href="@{/admin/reports}" class="sidebar-item "><i class="bi bi-file-earmark-bar-graph-fill"></i>Reports & Expenses</a>
+                <a th:href="@{/admin/payments}" class="sidebar-item "><i class="bi bi-wallet2"></i>Salary & Payments</a>
+                <a th:href="@{/admin/refunds}" class="sidebar-item "><i class="bi bi-arrow-counterclockwise"></i>Refund Management</a>
+                <a th:href="@{/admin/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>Feedback Reviews</a>
+                <a th:href="@{/admin/attendance}" class="sidebar-item "><i class="bi bi-calendar-check-fill"></i>Attendance</a>
+                <a th:href="@{/admin/leaves}" class="sidebar-item "><i class="bi bi-calendar-minus-fill"></i>Leaves</a>
+                <a th:href="@{/admin/maintenance}" class="sidebar-item "><i class="bi bi-wrench"></i>Maintenance</a>
+                <a th:href="@{/admin/performance}" class="sidebar-item "><i class="bi bi-graph-up-arrow"></i>Performance</a>
+                <a th:href="@{/admin/analytics}" class="sidebar-item "><i class="bi bi-pie-chart-fill"></i>Analytics</a>
+                <a th:href="@{/admin/documents}" class="sidebar-item "><i class="bi bi-file-earmark-medical-fill"></i>Documents</a>
+                <a th:href="@{/admin/audit-logs}" class="sidebar-item "><i class="bi bi-shield-check"></i>Audit Logs</a>
+                <a th:href="@{/admin/agents/history}" class="sidebar-item "><i class="bi bi-clock-history"></i>Agent History</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Top App Header (Mobile-only) -->
+            <div class="app-header">
+                <i class="bi bi-list app-header-icon"></i>
+                <h1 class="app-header-title">LogiTrack Pro</h1>
+                <div class="d-flex gap-3">
+                    <i class="bi bi-search app-header-icon"></i>
+                    <i class="bi bi-bell app-header-icon"></i>
+                </div>
+            </div>
+
+            <!-- Desktop Navbar (Desktop-only) -->
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Manage Agents')}"></div>
+
+            <div class="content-body">
+                <!-- Notifications -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pe-4">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                            <span th:text="${successMessage}"></span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a th:if="${whatsappUrl}" th:href="${whatsappUrl}" target="_blank" class="btn btn-sm btn-success rounded-pill px-3 py-1 font-weight-bold" style="font-size: 0.8rem;">
+                                <i class="bi bi-whatsapp me-2"></i>Send via WhatsApp
+                            </a>
+                            <a th:if="${smsUrl}" th:href="${smsUrl}" class="btn btn-sm btn-info text-white rounded-pill px-3 py-1 font-weight-bold" style="font-size: 0.8rem;">
+                                <i class="bi bi-chat-text-fill me-2"></i>Send via SMS
+                            </a>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Register Agent Form -->
+                    <div class="col-lg-4">
+                        <div class="card custom-card p-4">
+                            <h5 class="font-weight-bold mb-3">Register Delivery Agent</h5>
+                            <form th:action="@{/admin/agents/register}" method="POST">
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-medium text-secondary">Agent Name</label>
+                                    <input type="text" class="form-control" name="name"
+                                        placeholder="Enter Agent Full Name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-medium text-secondary">Phone Number</label>
+                                    <input type="tel" class="form-control" name="phone"
+                                        placeholder="Enter Agent Phone Number" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-medium text-secondary">Email Address</label>
+                                    <input type="email" class="form-control" name="email"
+                                        placeholder="agent@example.com" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-medium text-secondary">Password</label>
+                                    <input type="password" class="form-control" name="password"
+                                        placeholder="Enter Agent Password" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary-custom w-100 py-2 mt-2">
+                                    <i class="bi bi-person-plus-fill me-2"></i>Register Agent
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Assign Vehicle Card -->
+                        <div class="card custom-card p-4 mt-4">
+                            <h5 class="font-weight-bold mb-3">Assign Vehicle to Agent</h5>
+                            <form th:action="@{/admin/agents/assign-vehicle}" method="POST">
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-medium text-secondary">Select Agent</label>
+                                    <select class="form-select" name="agentId" required>
+                                        <option value="">-- Choose Agent --</option>
+                                        <option th:each="agent : ${agents}" th:value="${agent.id}"
+                                            th:text="${agent.name + ' (' + agent.id + ')'}"></option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-medium text-secondary">Select Available
+                                        Vehicle</label>
+                                    <select class="form-select" name="vehicleId" required>
+                                        <option value="">-- Choose Vehicle --</option>
+                                        <option th:each="vehicle : ${vehicles}" th:value="${vehicle.id}"
+                                            th:text="${vehicle.model + ' [' + vehicle.vehicleNumber + ']'}"></option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-dark w-100 py-2 mt-2">
+                                    <i class="bi bi-link-45deg me-2"></i>Allocate Vehicle
+                                </button>
+                            </form>
+
+                            <hr class="text-muted">
+
+                            <!-- Unassign Vehicle Form -->
+                            <h6 class="font-weight-bold mb-3 text-secondary">Remove Assigned Vehicle</h6>
+                            <form th:action="@{/admin/agents/unassign-vehicle}" method="POST">
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-medium text-secondary">Select Agent</label>
+                                    <select class="form-select" name="agentId" required>
+                                        <option value="">-- Choose Agent --</option>
+                                        <option th:each="agent : ${agents}" th:value="${agent.id}" th:if="${agent.vehicle != null}"
+                                            th:text="${agent.name + ' (' + agent.id + ') - ' + agent.vehicle.vehicleNumber}"></option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-outline-danger w-100 py-2" onclick="return confirm('Are you sure you want to unassign vehicle from this agent?')">
+                                    <i class="bi bi-trash me-2"></i>Unassign Vehicle
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Agents List -->
+                    <div class="col-lg-8">
+                        <div class="card custom-card p-4 h-100">
+                            <h5 class="font-weight-bold mb-3">Registered Delivery Agents</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-custom align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 50px;">Photo</th>
+                                            <th>Agent ID</th>
+                                            <th>Name</th>
+                                            <th>Phone</th>
+                                            <th>Email</th>
+                                            <th>Assigned Vehicle</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="agent : ${agents}">
+                                            <td>
+                                                <img th:src="${agent.profileImage != null ? agent.profileImage : '/images/default-avatar.png'}"
+                                                     class="rounded-circle border"
+                                                     style="width: 32px; height: 32px; object-fit: cover;"
+                                                     alt="Agent Photo">
+                                            </td>
+                                            <td class="font-weight-bold" th:text="${agent.id}">AGENT-1001</td>
+                                            <td th:text="${agent.name}">Agent Name</td>
+                                            <td th:text="${agent.phone}">Phone</td>
+                                            <td th:text="${agent.email}">Email</td>
+                                            <td>
+                                                <span th:if="${agent.vehicle != null}"
+                                                    class="badge bg-primary px-3 py-2 text-uppercase"
+                                                    th:text="${agent.vehicle.model + ' (' + agent.vehicle.vehicleNumber + ')'}">Vehicle
+                                                    Model</span>
+                                                <span th:if="${agent.vehicle == null}"
+                                                    class="badge bg-secondary px-3 py-2">No Vehicle Assigned</span>
+                                            </td>
+                                            <td>
+                                                <span th:if="${#strings.toString(agent.status) == 'ACTIVE'}" class="badge bg-success px-3 py-2">ACTIVE</span>
+                                                <span th:if="${#strings.toString(agent.status) == 'SUSPENDED'}" class="badge bg-warning text-dark px-3 py-2">SUSPENDED</span>
+                                                <span th:if="${#strings.toString(agent.status) == 'INACTIVE'}" class="badge bg-secondary px-3 py-2">INACTIVE</span>
+                                                <span th:if="${#strings.toString(agent.status) == 'TERMINATED'}" class="badge bg-danger px-3 py-2">TERMINATED</span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex gap-1 flex-wrap">
+                                                    <!-- Suspend -->
+                                                    <form th:if="${#strings.toString(agent.status) == 'ACTIVE'}" th:action="@{/admin/agents/suspend}" method="POST" class="d-inline">
+                                                        <input type="hidden" name="agentId" th:value="${agent.id}">
+                                                        <input type="hidden" name="remarks" value="Suspended by admin">
+                                                        <button type="submit" class="btn btn-sm btn-outline-warning text-dark px-2" title="Suspend Agent">
+                                                            <i class="bi bi-slash-circle"></i>
+                                                        </button>
+                                                    </form>
+                                                    
+                                                    <!-- Deactivate -->
+                                                    <form th:if="${#strings.toString(agent.status) == 'ACTIVE'}" th:action="@{/admin/agents/deactivate}" method="POST" class="d-inline">
+                                                        <input type="hidden" name="agentId" th:value="${agent.id}">
+                                                        <input type="hidden" name="remarks" value="Deactivated by admin (Resigned/Left)">
+                                                        <button type="submit" class="btn btn-sm btn-outline-secondary px-2" title="Deactivate Agent">
+                                                            <i class="bi bi-person-dash-fill"></i>
+                                                        </button>
+                                                    </form>
+                                                    
+                                                    <!-- Reactivate -->
+                                                    <form th:if="${#strings.toString(agent.status) == 'SUSPENDED' || #strings.toString(agent.status) == 'INACTIVE'}" th:action="@{/admin/agents/reactivate}" method="POST" class="d-inline">
+                                                        <input type="hidden" name="agentId" th:value="${agent.id}">
+                                                        <button type="submit" class="btn btn-sm btn-outline-success px-2" title="Reactivate Agent">
+                                                            <i class="bi bi-person-check-fill"></i>
+                                                        </button>
+                                                    </form>
+                                                    
+                                                    <!-- Terminate -->
+                                                    <button th:if="${#strings.toString(agent.status) != 'TERMINATED'}" 
+                                                            type="button" 
+                                                            class="btn btn-sm btn-outline-danger px-2 terminate-btn" 
+                                                            th:data-agent-id="${agent.id}" 
+                                                            th:data-agent-name="${agent.name}"
+                                                            title="Terminate Agent">
+                                                        <i class="bi bi-x-circle-fill"></i>
+                                                    </button>
+                                                    
+                                                    <!-- Audit Log -->
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-outline-info px-2 history-btn" 
+                                                            th:data-agent-id="${agent.id}" 
+                                                            th:data-agent-name="${agent.name}"
+                                                            title="View Status History">
+                                                        <i class="bi bi-clock-history"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(agents)}">
+                                            <td colspan="8" class="text-center text-muted py-5">No agents registered.
+                                                Use the registration form to add one.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+ 
+            <!-- Sticky Bottom Tab Navigation (Mobile-only) -->
+            <div class="bottom-nav">
+                <a th:href="@{/admin/dashboard}" class="bottom-nav-item">
+                    <div class="bottom-nav-icon-container">
+                        <i class="bi bi-grid"></i>
+                    </div>
+                    <span>Home</span>
+                </a>
+                <a th:href="@{/admin/assign}" class="bottom-nav-item">
+                    <div class="bottom-nav-icon-container">
+                        <i class="bi bi-clipboard2-data"></i>
+                    </div>
+                    <span>Requests</span>
+                </a>
+                <a th:href="@{/admin/agents}" class="bottom-nav-item active">
+                    <div class="bottom-nav-icon-container">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <span>Agents</span>
+                </a>
+                <a th:href="@{/logout}" class="bottom-nav-item text-danger">
+                    <div class="bottom-nav-icon-container text-danger">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </div>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </div>
+ 
+    <!-- Terminate Agent Modal -->
+    <div class="modal fade" id="terminateModal" tabindex="-1" aria-labelledby="terminateModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="terminateModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i>Terminate Agent</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form th:action="@{/admin/agents/terminate}" method="POST" id="terminateForm">
+                    <div class="modal-body p-4">
+                        <input type="hidden" name="agentId" id="terminateAgentId">
+                        
+                        <p class="text-muted">You are about to terminate agent <strong id="terminateAgentName"></strong>. This action is permanent and will block account login access immediately.</p>
+                        
+                        <!-- Pending deliveries reassignment warning & options -->
+                        <div id="pendingDeliveriesWarning" class="alert alert-warning d-none" role="alert">
+                            <i class="bi bi-exclamation-circle-fill me-2"></i>
+                            This agent has <strong id="pendingDeliveriesCount">0</strong> pending deliveries. You <strong>must</strong> reassign them to an active agent before terminating.
+                        </div>
+                        
+                        <div class="mb-3 d-none" id="reassignmentSection">
+                            <label for="reassignToAgentId" class="form-label font-weight-medium text-secondary">Reassign Pending Deliveries To</label>
+                            <select class="form-select" name="reassignToAgentId" id="reassignToAgentId">
+                                <option value="">-- Select Active Agent --</option>
+                                <option th:each="activeAgent : ${activeAgents}" th:value="${activeAgent.id}"
+                                    th:text="${activeAgent.name + ' (' + activeAgent.id + ')'}"></option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="reason" class="form-label font-weight-medium text-secondary">Termination Reason</label>
+                            <textarea class="form-control" name="reason" id="reason" rows="3" placeholder="Enter reason for termination..." required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light border-0">
+                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger px-4">Terminate Agent</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status History Modal -->
+    <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title" id="historyModalLabel"><i class="bi bi-clock-history me-2"></i>Agent Status History - <span id="historyAgentName"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                    <th>By Admin</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <!-- AJAX content goes here -->
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">Loading history...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Terminate buttons action
+            const terminateBtns = document.querySelectorAll('.terminate-btn');
+            const terminateModal = new bootstrap.Modal(document.getElementById('terminateModal'));
+            const terminateAgentIdInput = document.getElementById('terminateAgentId');
+            const terminateAgentNameSpan = document.getElementById('terminateAgentName');
+            const pendingWarning = document.getElementById('pendingDeliveriesWarning');
+            const reassignmentSection = document.getElementById('reassignmentSection');
+            const reassignmentSelect = document.getElementById('reassignToAgentId');
+            const pendingCountSpan = document.getElementById('pendingDeliveriesCount');
+
+            terminateBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const agentId = this.getAttribute('data-agent-id');
+                    const agentName = this.getAttribute('data-agent-name');
+                    
+                    terminateAgentIdInput.value = agentId;
+                    terminateAgentNameSpan.textContent = agentName;
+                    
+                    // Reset modal state
+                    pendingWarning.classList.add('d-none');
+                    reassignmentSection.classList.add('d-none');
+                    reassignmentSelect.required = false;
+                    reassignmentSelect.value = '';
+                    
+                    // Check for pending deliveries via AJAX
+                    fetch(`/admin/agents/${agentId}/pending-deliveries`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data && data.length > 0) {
+                                pendingCountSpan.textContent = data.length;
+                                pendingWarning.classList.remove('d-none');
+                                reassignmentSection.classList.remove('d-none');
+                                reassignmentSelect.required = true;
+                                
+                                // Disable this agent from reassignment options to prevent self-reassignment
+                                for (let option of reassignmentSelect.options) {
+                                    if (option.value === agentId) {
+                                        option.disabled = true;
+                                    } else {
+                                        option.disabled = false;
+                                    }
+                                }
+                            }
+                            terminateModal.show();
+                        })
+                        .catch(err => {
+                            console.error('Error fetching pending deliveries:', err);
+                            terminateModal.show();
+                        });
+                });
+            });
+
+            // History buttons action
+            const historyBtns = document.querySelectorAll('.history-btn');
+            const historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
+            const historyAgentNameSpan = document.getElementById('historyAgentName');
+            const historyTableBody = document.getElementById('historyTableBody');
+
+            historyBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const agentId = this.getAttribute('data-agent-id');
+                    const agentName = this.getAttribute('data-agent-name');
+                    
+                    historyAgentNameSpan.textContent = agentName;
+                    historyTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>Loading history...</td></tr>`;
+                    
+                    historyModal.show();
+
+                    fetch(`/admin/agents/${agentId}/audit-log`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data && data.length > 0) {
+                                let rowsHtml = '';
+                                data.forEach(log => {
+                                    // format date (simple formatting)
+                                    let dateStr = log.actionDate ? log.actionDate.replace('T', ' ').substring(0, 19) : '';
+                                    rowsHtml += `
+                                        <tr>
+                                            <td class="small text-muted font-weight-medium">${dateStr}</td>
+                                            <td><span class="badge ${getActionBadgeClass(log.action)} px-2 py-1">${log.action}</span></td>
+                                            <td class="font-weight-medium">${log.actionByAdmin}</td>
+                                            <td class="text-secondary small">${log.remarks || '-'}</td>
+                                        </tr>
+                                    `;
+                                });
+                                historyTableBody.innerHTML = rowsHtml;
+                            } else {
+                                historyTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">No history logs found for this agent.</td></tr>`;
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Error fetching audit logs:', err);
+                            historyTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-danger">Error loading history logs.</td></tr>`;
+                        });
+                });
+            });
+
+            function getActionBadgeClass(action) {
+                switch(action) {
+                    case 'Agent Registered': return 'bg-info text-white';
+                    case 'Agent Suspended': return 'bg-warning text-dark';
+                    case 'Agent Reactivated': return 'bg-success text-white';
+                    case 'Agent Terminated': return 'bg-danger text-white';
+                    case 'Agent Deactivated': return 'bg-secondary text-white';
+                    default: return 'bg-dark text-white';
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

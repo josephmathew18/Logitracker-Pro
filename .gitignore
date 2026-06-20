@@ -1,0 +1,16 @@
+target/
+maven/
+uploads/
+scratch/
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+dummy_dl.pdf

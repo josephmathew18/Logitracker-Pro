@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Compliance Dashboard - Admin</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck me-2"></i>LogiTrack <span>Pro</span>
+            </div>
+            <div class="sidebar-menu">
+                <a th:href="@{/admin/dashboard}" class="sidebar-item"><i class="bi bi-grid"></i>Dashboard</a>
+                <a th:href="@{/admin/agents}" class="sidebar-item"><i class="bi bi-people-fill"></i>Manage Agents</a>
+                <a th:href="@{/admin/vehicles}" class="sidebar-item"><i class="bi bi-truck"></i>Manage Vehicles</a>
+                <a th:href="@{/admin/assign}" class="sidebar-item"><i class="bi bi-plus-circle-fill"></i>Allocate Deliveries</a>
+                <a th:href="@{/admin/monitor}" class="sidebar-item"><i class="bi bi-geo-alt-fill"></i>Monitor Deliveries</a>
+                <a th:href="@{/admin/reports}" class="sidebar-item"><i class="bi bi-file-earmark-bar-graph-fill"></i>Reports & Expenses</a>
+                <a th:href="@{/admin/payments}" class="sidebar-item"><i class="bi bi-wallet2"></i>Salary & Payments</a>
+                <a th:href="@{/admin/refunds}" class="sidebar-item"><i class="bi bi-arrow-counterclockwise"></i>Refund Management</a>
+                <a th:href="@{/admin/feedback}" class="sidebar-item"><i class="bi bi-star-fill"></i>Feedback Reviews</a>
+                <a th:href="@{/admin/attendance}" class="sidebar-item"><i class="bi bi-calendar-check-fill"></i>Attendance</a>
+                <a th:href="@{/admin/leaves}" class="sidebar-item"><i class="bi bi-calendar-minus-fill"></i>Leaves</a>
+                <a th:href="@{/admin/maintenance}" class="sidebar-item"><i class="bi bi-wrench"></i>Maintenance</a>
+                <a th:href="@{/admin/performance}" class="sidebar-item"><i class="bi bi-graph-up-arrow"></i>Performance</a>
+                <a th:href="@{/admin/analytics}" class="sidebar-item"><i class="bi bi-pie-chart-fill"></i>Analytics</a>
+                <a th:href="@{/admin/documents}" class="sidebar-item active"><i class="bi bi-file-earmark-medical-fill"></i>Documents</a>
+                <a th:href="@{/admin/audit-logs}" class="sidebar-item"><i class="bi bi-shield-check"></i>Audit Logs</a>
+                <a th:href="@{/admin/agents/history}" class="sidebar-item"><i class="bi bi-clock-history"></i>Agent History</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Agent Document Compliance')}"></div>
+
+            <div class="content-body">
+                <!-- Notifications -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <span class="app-overview-tag">Compliance Dashboard</span>
+                <h2 class="app-page-title">Agent-Wise Document Management</h2>
+
+                <!-- Metrics Summary Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-2-4 col-sm-6 col-12">
+                        <div class="card custom-card p-3 border-start border-primary border-4 text-center">
+                            <div class="text-uppercase text-secondary small font-weight-bold mb-1">Total Uploads</div>
+                            <h3 class="font-weight-bold text-primary mb-0" th:text="${totalDocs}">0</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-2-4 col-sm-6 col-12">
+                        <div class="card custom-card p-3 border-start border-warning border-4 text-center">
+                            <div class="text-uppercase text-secondary small font-weight-bold mb-1">Pending Review</div>
+                            <h3 class="font-weight-bold text-warning mb-0" th:text="${pendingDocs}">0</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-2-4 col-sm-6 col-12">
+                        <div class="card custom-card p-3 border-start border-success border-4 text-center">
+                            <div class="text-uppercase text-secondary small font-weight-bold mb-1">Approved Docs</div>
+                            <h3 class="font-weight-bold text-success mb-0" th:text="${approvedDocs}">0</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-2-4 col-sm-6 col-12">
+                        <div class="card custom-card p-3 border-start border-danger border-4 text-center">
+                            <div class="text-uppercase text-secondary small font-weight-bold mb-1">Rejected Docs</div>
+                            <h3 class="font-weight-bold text-danger mb-0" th:text="${rejectedDocs}">0</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-2-4 col-sm-6 col-12">
+                        <div class="card custom-card p-3 border-start border-info border-4 text-center">
+                            <div class="text-uppercase text-secondary small font-weight-bold mb-1">Expiring Soon</div>
+                            <h3 class="font-weight-bold text-info mb-0" th:text="${expiringSoonDocs}">0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters & Search Form -->
+                <div class="card custom-card p-4 mb-4">
+                    <form th:action="@{/admin/documents}" method="GET" class="row g-3 align-items-center">
+                        <div class="col-md-5">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                <input type="text" name="search" th:value="${search}" class="form-control border-start-0" placeholder="Search by Agent Name or Agent ID...">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select" name="filter">
+                                <option value="" th:selected="${filter == null || filter == ''}">All Compliance Statuses</option>
+                                <option value="PENDING" th:selected="${filter == 'PENDING'}">Pending verification (Awaiting action)</option>
+                                <option value="APPROVED" th:selected="${filter == 'APPROVED'}">Fully Approved (All valid)</option>
+                                <option value="REJECTED" th:selected="${filter == 'REJECTED'}">Rejected document(s) (Correction required)</option>
+                                <option value="EXPIRED" th:selected="${filter == 'EXPIRED'}">Expired document(s) (Suspended compliance)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary-custom w-100 py-2">
+                                <i class="bi bi-funnel-fill me-1"></i> Apply Filters
+                            </button>
+                            <a th:href="@{/admin/documents}" class="btn btn-secondary w-50 py-2 text-center text-decoration-none">
+                                Reset
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Agents compliance List -->
+                <div class="card custom-card p-4">
+                    <h5 class="font-weight-bold mb-3"><i class="bi bi-shield-check text-primary me-2"></i>Agents Compliance Ledger</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Agent ID</th>
+                                    <th>Agent Name</th>
+                                    <th>Phone Number</th>
+                                    <th>Assigned Vehicle</th>
+                                    <th>Document Status</th>
+                                    <th class="text-center">Verification Stats</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="dto : ${agentStatusList}">
+                                    <td class="font-weight-bold text-dark" th:text="${dto.agentId}">1001</td>
+                                    <td class="font-weight-bold" th:text="${dto.agentName}">Agent Name</td>
+                                    <td th:text="${dto.phone}">9876543211</td>
+                                    <td th:text="${dto.assignedVehicle}">KA-01-ME-1234</td>
+                                    <td>
+                                        <span class="badge rounded-pill px-3 py-2 font-weight-semibold"
+                                              th:classappend="${dto.documentStatus == 'APPROVED' ? 'bg-success' : 
+                                                              (dto.documentStatus == 'PENDING' ? 'bg-warning text-dark' : 
+                                                              (dto.documentStatus == 'REJECTED' ? 'bg-danger' : 
+                                                              (dto.documentStatus == 'EXPIRED' ? 'bg-dark' : 'bg-secondary')))}"
+                                              th:text="${dto.documentStatus}">aggregateStatus</span>
+                                    </td>
+                                    <td class="text-center small text-secondary">
+                                        <span class="badge bg-light text-dark border me-1" th:text="${dto.totalDocs + ' total'}"></span>
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle me-1" th:if="${dto.pendingDocs > 0}" th:text="${dto.pendingDocs + ' pending'}"></span>
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle me-1" th:if="${dto.rejectedDocs > 0}" th:text="${dto.rejectedDocs + ' rejected'}"></span>
+                                        <span class="badge bg-dark-subtle text-dark border border-dark-subtle" th:if="${dto.expiredDocs > 0}" th:text="${dto.expiredDocs + ' expired'}"></span>
+                                    </td>
+                                    <td>
+                                        <a th:href="@{/admin/documents/agent/{id}(id=${dto.agentId})}" class="btn btn-sm btn-outline-primary px-3 py-1.5 rounded-pill">
+                                            <i class="bi bi-file-earmark-medical me-1"></i> View Documents
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(agentStatusList)}">
+                                    <td colspan="7" class="text-center text-muted py-5">
+                                        <i class="bi bi-folder-x fs-2 d-block mb-2 text-muted"></i>
+                                        No agents matching the search criteria or status filter found.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Maintenance & Compliance - Admin</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck me-2"></i>LogiTrack <span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/admin/dashboard}" class="sidebar-item "><i class="bi bi-grid"></i>Dashboard</a>
+                <a th:href="@{/admin/agents}" class="sidebar-item "><i class="bi bi-people-fill"></i>Manage Agents</a>
+                <a th:href="@{/admin/vehicles}" class="sidebar-item "><i class="bi bi-truck"></i>Manage Vehicles</a>
+                <a th:href="@{/admin/assign}" class="sidebar-item "><i class="bi bi-plus-circle-fill"></i>Allocate Deliveries</a>
+                <a th:href="@{/admin/monitor}" class="sidebar-item "><i class="bi bi-geo-alt-fill"></i>Monitor Deliveries</a>
+                <a th:href="@{/admin/reports}" class="sidebar-item "><i class="bi bi-file-earmark-bar-graph-fill"></i>Reports & Expenses</a>
+                <a th:href="@{/admin/payments}" class="sidebar-item "><i class="bi bi-wallet2"></i>Salary & Payments</a>
+                <a th:href="@{/admin/refunds}" class="sidebar-item "><i class="bi bi-arrow-counterclockwise"></i>Refund Management</a>
+                <a th:href="@{/admin/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>Feedback Reviews</a>
+                <a th:href="@{/admin/attendance}" class="sidebar-item "><i class="bi bi-calendar-check-fill"></i>Attendance</a>
+                <a th:href="@{/admin/leaves}" class="sidebar-item "><i class="bi bi-calendar-minus-fill"></i>Leaves</a>
+                <a th:href="@{/admin/maintenance}" class="sidebar-item active"><i class="bi bi-wrench"></i>Maintenance</a>
+                <a th:href="@{/admin/performance}" class="sidebar-item "><i class="bi bi-graph-up-arrow"></i>Performance</a>
+                <a th:href="@{/admin/analytics}" class="sidebar-item "><i class="bi bi-pie-chart-fill"></i>Analytics</a>
+                <a th:href="@{/admin/documents}" class="sidebar-item "><i class="bi bi-file-earmark-medical-fill"></i>Documents</a>
+                <a th:href="@{/admin/audit-logs}" class="sidebar-item "><i class="bi bi-shield-check"></i>Audit Logs</a>
+                <a th:href="@{/admin/agents/history}" class="sidebar-item "><i class="bi bi-clock-history"></i>Agent History</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Vehicle Maintenance Command')}"></div>
+
+            <div class="content-body">
+                <!-- Notifications -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <span class="app-overview-tag">Fleet Maintenance</span>
+                <h2 class="app-page-title">Service & Health Schedules</h2>
+
+                <div class="row g-4 mb-4">
+                    <!-- Metrics Summary -->
+                    <div class="col-md-4">
+                        <div class="card custom-card p-4 text-center">
+                            <h6 class="text-muted text-uppercase small font-weight-bold">Vehicles in Maintenance</h6>
+                            <h2 class="fw-bold mb-0 text-warning" th:text="${vehiclesInMaintenance}">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card custom-card p-4 text-center">
+                            <h6 class="text-muted text-uppercase small font-weight-bold">Scheduled Services</h6>
+                            <h2 class="fw-bold mb-0 text-primary" th:text="${activeMaintenance.size()}">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card custom-card p-4 text-center bg-danger-subtle border-danger">
+                            <h6 class="text-danger text-uppercase small font-weight-bold"><i class="bi bi-exclamation-octagon me-1"></i>Insurance / Pollution Expirations</h6>
+                            <h2 class="fw-bold mb-0 text-danger">1 Alert</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Left: Schedule maintenance form -->
+                    <div class="col-lg-4">
+                        <div class="card custom-card p-4 mb-4">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-calendar-plus me-2 text-primary"></i>Schedule Maintenance</h5>
+                            <form th:action="@{/admin/maintenance/schedule}" method="POST">
+                                <div class="mb-3">
+                                    <label class="form-label text-secondary font-weight-medium">Select Vehicle</label>
+                                    <select class="form-select" name="vehicleId" required>
+                                        <option value="">-- Choose Vehicle --</option>
+                                        <option th:each="v : ${vehicles}" th:value="${v.id}" th:text="${v.model + ' [' + v.vehicleNumber + ']'}"></option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-secondary font-weight-medium">Scheduled Date</label>
+                                    <input type="date" class="form-control" name="scheduledDate" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-secondary font-weight-medium">Maintenance Notes</label>
+                                    <textarea class="form-control" name="remarks" rows="2" placeholder="e.g. Brake pad wear check, Oil change" required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary-custom w-100 py-2">
+                                    <i class="bi bi-check-lg me-2"></i>Schedule Service
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Compliance Alerts Card -->
+                        <div class="card custom-card p-4 bg-white border">
+                            <h5 class="font-weight-bold mb-3 text-dark"><i class="bi bi-shield-exclamation me-2 text-danger"></i>Compliance Expiry Alerts</h5>
+                            <div class="alert alert-danger p-3 mb-0 small" style="border-radius:0.75rem;">
+                                <strong>KA-01-ME-1234 (Ather 450X)</strong>
+                                <p class="mb-0 mt-1">Pollution Certificate (PUC) will expire on <strong>2026-07-05</strong> (in 17 days).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Maintenance Logs table -->
+                    <div class="col-lg-8">
+                        <div class="card custom-card p-4">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-clipboard2-pulse me-2 text-info"></i>Maintenance Schedule Logs</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-custom align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Vehicle</th>
+                                            <th>Scheduled Date</th>
+                                            <th>Completed Date</th>
+                                            <th>Cost</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="m : ${allMaintenance}">
+                                            <td class="font-weight-bold" th:text="${m.vehicle.model + ' (' + m.vehicle.vehicleNumber + ')'}">KA-01-ME-1234</td>
+                                            <td th:text="${m.scheduledDate}">Scheduled Date</td>
+                                            <td th:text="${m.completedDate != null ? m.completedDate : '-'}">Completed Date</td>
+                                            <td th:text="${m.maintenanceCost != null ? '₹' + m.maintenanceCost : '-'}">Cost</td>
+                                            <td>
+                                                <span class="badge" th:classappend="${m.status == 'COMPLETED' ? 'bg-success' : 'bg-warning text-dark'}" th:text="${m.status}">SCHEDULED</span>
+                                            </td>
+                                            <td>
+                                                <button th:if="${m.status == 'SCHEDULED'}" 
+                                                        class="btn btn-sm btn-outline-success complete-service-btn px-3 rounded-pill" 
+                                                        th:data-id="${m.id}" 
+                                                        th:data-vehicle="${m.vehicle.model}">
+                                                    <i class="bi bi-check2-circle me-1"></i>Mark Done
+                                                </button>
+                                                <span th:if="${m.status == 'COMPLETED'}" class="text-success small font-weight-bold"><i class="bi bi-check-all me-1"></i>Completed</span>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(allMaintenance)}">
+                                            <td colspan="6" class="text-center text-muted py-5">
+                                                No maintenance logged for this fleet.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complete Maintenance Modal -->
+    <div class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="completeModalLabel"><i class="bi bi-wrench-adjustable me-2"></i>Complete Vehicle Service</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="#" method="POST" id="completeForm">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <div class="modal-body p-4">
+                        <p class="text-muted">Fill out the final costs and service parameters for vehicle: <strong id="modalVehicleName"></strong>.</p>
+                        
+                        <div class="mb-3">
+                            <label for="completedDate" class="form-label font-weight-medium text-secondary">Completion Date</label>
+                            <input type="date" class="form-control" name="completedDate" id="completedDate" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="maintenanceCost" class="form-label font-weight-medium text-secondary">Maintenance Cost (₹)</label>
+                            <input type="number" step="0.01" class="form-control" name="maintenanceCost" id="maintenanceCost" placeholder="e.g. 1500" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="remarks" class="form-label font-weight-medium text-secondary">Service Resolution Remarks</label>
+                            <textarea class="form-control" name="remarks" id="remarks" rows="3" placeholder="Oil filter replaced, front brakes changed." required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light border-0">
+                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success px-4">Complete Service</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const completeModal = new bootstrap.Modal(document.getElementById('completeModal'));
+            const completeForm = document.getElementById('completeForm');
+            const vehicleNameSpan = document.getElementById('modalVehicleName');
+            const completeBtns = document.querySelectorAll('.complete-service-btn');
+            
+            // Set today's date in input by default
+            document.getElementById('completedDate').valueAsDate = new Date();
+
+            completeBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const vehicleName = this.getAttribute('data-vehicle');
+                    
+                    vehicleNameSpan.textContent = vehicleName;
+                    completeForm.action = "/admin/maintenance/complete/" + id;
+                    completeModal.show();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

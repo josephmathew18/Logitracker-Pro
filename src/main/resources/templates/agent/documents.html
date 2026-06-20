@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Documents - Agent Operational Portal</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck-flatbed me-2"></i>LogiTrack<span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/agent/dashboard}" class="sidebar-item "><i class="bi bi-card-list"></i>My Shipments</a>
+                <a th:href="@{/agent/expenses}" class="sidebar-item "><i class="bi bi-fuel-pump-fill"></i>Refuel Expenses</a>
+                <a th:href="@{/agent/salaries}" class="sidebar-item "><i class="bi bi-wallet-fill"></i>My Salary</a>
+                <a th:href="@{/agent/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>My Ratings</a>
+                <a th:href="@{/agent/attendance}" class="sidebar-item "><i class="bi bi-calendar-check-fill"></i>My Attendance</a>
+                <a th:href="@{/agent/leaves}" class="sidebar-item "><i class="bi bi-calendar-minus-fill"></i>My Leaves</a>
+                <a th:href="@{/agent/documents}" class="sidebar-item active"><i class="bi bi-file-earmark-medical-fill"></i>My Documents</a>
+                
+                <!-- My Profile Dropdown/Submenu -->
+                <a href="#profileSubmenu" data-bs-toggle="collapse" class="sidebar-item d-flex justify-content-between align-items-center " aria-expanded="false">
+                    <span><i class="bi bi-person-circle"></i>My Profile</span>
+                    <i class="bi bi-chevron-down small" style="margin-right:0; font-size: 0.8rem;"></i>
+                </a>
+                <div class="collapse " id="profileSubmenu">
+                    <a th:href="@{/agent/profile}" class="sidebar-item " style="padding-left: 2.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-person-badge-fill"></i>Profile Details
+                    </a>
+                    <a th:href="@{/agent/change-password}" class="sidebar-item " style="padding-left: 2.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-key-fill"></i>Change Password
+                    </a>
+                </div>
+
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='My Documents')}"></div>
+
+            <div class="content-body">
+                <!-- Notifications -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <span class="app-overview-tag">Compliance & Safety</span>
+                <h2 class="app-page-title">My Credentials</h2>
+
+                <div class="row g-4">
+                    <!-- Left: Upload new Document -->
+                    <div class="col-lg-4">
+                        <div class="card custom-card p-4">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-file-earmark-arrow-up me-2 text-primary"></i>Upload Document</h5>
+                            <form th:action="@{/agent/documents/upload}" method="POST" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label class="form-label text-secondary font-weight-medium">Document Type</label>
+                                    <select class="form-select" name="documentType" required>
+                                        <option value="DRIVING_LICENSE">Driving License (DL)</option>
+                                        <option value="IDENTITY_PROOF">Identity Proof (Aadhaar / PAN)</option>
+                                        <option value="VEHICLE_RC">Vehicle Registration (RC)</option>
+                                        <option value="INSURANCE">Insurance Document</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-secondary font-weight-medium">Expiry Date</label>
+                                    <input type="date" class="form-control" name="expiryDate">
+                                    <small class="text-muted">Required for Driving License and Insurance.</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-secondary font-weight-medium">Choose File (PDF/Image)</label>
+                                    <input type="file" class="form-control" name="docFile" accept=".pdf,.png,.jpg,.jpeg" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary-custom w-100 py-2">
+                                    <i class="bi bi-cloud-arrow-up-fill me-2"></i>Upload File
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Right: Current Documents list -->
+                    <div class="col-lg-8">
+                        <div class="card custom-card p-4 h-100">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-shield-check me-2 text-info"></i>Uploaded Credentials & Status</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-custom align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>File Reference</th>
+                                            <th>Expiry Date</th>
+                                            <th>Status</th>
+                                            <th>Admin Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="doc : ${documents}">
+                                            <td class="font-weight-bold" th:text="${doc.documentType}">DRIVING_LICENSE</td>
+                                            <td>
+                                                <a th:href="${doc.filePath}" target="_blank" class="text-decoration-none small">
+                                                    <i class="bi bi-file-earmark-pdf-fill me-1 text-danger"></i> <span th:text="${doc.fileName}">file</span>
+                                                </a>
+                                            </td>
+                                            <td th:text="${doc.expiryDate != null ? doc.expiryDate : 'N/A'}">Expiry</td>
+                                            <td>
+                                                <span class="badge" th:classappend="${doc.verificationStatus == 'APPROVED' ? 'bg-success' : (doc.verificationStatus == 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark')}" th:text="${doc.verificationStatus}">PENDING</span>
+                                            </td>
+                                            <td class="small text-secondary" th:text="${doc.remarks != null ? doc.remarks : '-'}">Remarks</td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(documents)}">
+                                            <td colspan="5" class="text-center text-muted py-5">
+                                                No documents uploaded. Complete the upload form to verify credentials.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

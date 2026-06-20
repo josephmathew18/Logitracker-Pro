@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Register - Delivery Service Provider Management System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+<body class="auth-wrapper">
+
+    <div class="auth-card" style="max-width: 500px;">
+        <div class="auth-brand">
+            <i class="bi bi-truck-flatbed"></i> Delivery<span>System</span>
+        </div>
+        <h4 class="text-center mb-4 text-dark font-weight-bold">Customer Registration</h4>
+        
+        <!-- Error Alert -->
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <form th:action="@{/register}" method="POST" class="needs-validation" novalidate>
+            <!-- Username -->
+            <div class="mb-3">
+                <label for="username" class="form-label font-weight-medium text-secondary">Username</label>
+                <input type="text" class="form-control" id="username" name="username" placeholder="Choose a username" required>
+                <div class="invalid-feedback">Please choose a username.</div>
+            </div>
+
+            <!-- Password -->
+            <div class="mb-3">
+                <label for="password" class="form-label font-weight-medium text-secondary">Password</label>
+                <input type="password" class="form-control" id="password" name="password" placeholder="Create password" required>
+                <div class="invalid-feedback">Please provide a password.</div>
+            </div>
+
+            <div class="row">
+                <!-- Full Name -->
+                <div class="col-md-6 mb-3">
+                    <label for="name" class="form-label font-weight-medium text-secondary">Full Name</label>
+                    <input type="text" class="form-control" id="name" name="name" placeholder="John Doe" required>
+                    <div class="invalid-feedback">Please enter your full name.</div>
+                </div>
+                <!-- Phone Number -->
+                <div class="col-md-6 mb-3">
+                    <label for="phone" class="form-label font-weight-medium text-secondary">Phone Number</label>
+                    <input type="tel" class="form-control" id="phone" name="phone" placeholder="9876543210" pattern="[0-9]{10}" required>
+                    <div class="invalid-feedback">Please enter a valid 10-digit number.</div>
+                </div>
+            </div>
+
+            <!-- Email Address -->
+            <div class="mb-3">
+                <label for="email" class="form-label font-weight-medium text-secondary">Email Address</label>
+                <input type="email" class="form-control" id="email" name="email" placeholder="john.doe@example.com" required>
+                <div class="invalid-feedback">Please enter a valid email address.</div>
+            </div>
+
+            <!-- Complete Address -->
+            <div class="mb-4">
+                <label for="address" class="form-label font-weight-medium text-secondary">Complete Address</label>
+                <textarea class="form-control" id="address" name="address" rows="2" placeholder="Street, Flat Number, City, Pincode" required></textarea>
+                <div class="invalid-feedback">Please enter your address.</div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary-custom w-100 mb-3 py-2">
+                <i class="bi bi-person-plus-fill me-2"></i>Register Account
+            </button>
+        </form>
+
+        <div class="text-center mt-2">
+            <p class="text-muted mb-0">Already registered? <a th:href="@{/login}" class="text-primary font-weight-medium text-decoration-none">Sign In</a></p>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Bootstrap form validation script
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+    </script>
+</body>
+</html>

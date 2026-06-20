@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Logs & Reports - Admin</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck me-2"></i>LogiTrack <span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/admin/dashboard}" class="sidebar-item "><i class="bi bi-grid"></i>Dashboard</a>
+                <a th:href="@{/admin/agents}" class="sidebar-item "><i class="bi bi-people-fill"></i>Manage Agents</a>
+                <a th:href="@{/admin/vehicles}" class="sidebar-item "><i class="bi bi-truck"></i>Manage Vehicles</a>
+                <a th:href="@{/admin/assign}" class="sidebar-item "><i class="bi bi-plus-circle-fill"></i>Allocate Deliveries</a>
+                <a th:href="@{/admin/monitor}" class="sidebar-item "><i class="bi bi-geo-alt-fill"></i>Monitor Deliveries</a>
+                <a th:href="@{/admin/reports}" class="sidebar-item "><i class="bi bi-file-earmark-bar-graph-fill"></i>Reports & Expenses</a>
+                <a th:href="@{/admin/payments}" class="sidebar-item "><i class="bi bi-wallet2"></i>Salary & Payments</a>
+                <a th:href="@{/admin/refunds}" class="sidebar-item "><i class="bi bi-arrow-counterclockwise"></i>Refund Management</a>
+                <a th:href="@{/admin/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>Feedback Reviews</a>
+                <a th:href="@{/admin/attendance}" class="sidebar-item "><i class="bi bi-calendar-check-fill"></i>Attendance</a>
+                <a th:href="@{/admin/leaves}" class="sidebar-item "><i class="bi bi-calendar-minus-fill"></i>Leaves</a>
+                <a th:href="@{/admin/maintenance}" class="sidebar-item "><i class="bi bi-wrench"></i>Maintenance</a>
+                <a th:href="@{/admin/performance}" class="sidebar-item "><i class="bi bi-graph-up-arrow"></i>Performance</a>
+                <a th:href="@{/admin/analytics}" class="sidebar-item "><i class="bi bi-pie-chart-fill"></i>Analytics</a>
+                <a th:href="@{/admin/documents}" class="sidebar-item "><i class="bi bi-file-earmark-medical-fill"></i>Documents</a>
+                <a th:href="@{/admin/audit-logs}" class="sidebar-item active"><i class="bi bi-shield-check"></i>Audit Logs</a>
+                <a th:href="@{/admin/agents/history}" class="sidebar-item "><i class="bi bi-clock-history"></i>Agent History</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Administrative Security Audit')}"></div>
+
+            <div class="content-body">
+                <span class="app-overview-tag">Security & Integrity</span>
+                <h2 class="app-page-title">Administrative Audit Trail</h2>
+
+                <div class="card custom-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="font-weight-bold mb-0">System Activity Logs</h5>
+                        <div>
+                            <input type="text" class="form-control rounded-pill px-3 py-1 text-center" id="auditSearch" placeholder="Search by user or action..." style="width:250px; font-size: 0.85rem;">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom align-middle" id="auditTable">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Action</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="log : ${logs}">
+                                    <td class="small text-muted font-weight-medium" th:text="${#temporals.format(log.timestamp, 'yyyy-MM-dd HH:mm:ss')}">Timestamp</td>
+                                    <td class="font-weight-bold" th:text="${log.username}">admin</td>
+                                    <td><span class="badge bg-light text-dark px-2 py-1 font-weight-bold" th:text="${log.role}">ADMIN</span></td>
+                                    <td>
+                                        <span class="badge px-3 py-2 text-uppercase bg-info-subtle text-info font-weight-bold" th:classappend="${#strings.contains(log.action, 'SUSPEND') || #strings.contains(log.action, 'TERMINATE') ? 'bg-danger-subtle text-danger' : (#strings.contains(log.action, 'APPROVE') ? 'bg-success-subtle text-success' : '')}" th:text="${log.action}">Action</span>
+                                    </td>
+                                    <td class="text-secondary small" th:text="${log.remarks}">Remarks</td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(logs)}">
+                                    <td colspan="5" class="text-center text-muted py-5">
+                                        <i class="bi bi-shield-slash fs-1 d-block mb-3"></i>
+                                        No audit entries registered.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Client-side filter search script -->
+    <script>
+        document.getElementById('auditSearch').addEventListener('keyup', function() {
+            const query = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#auditTable tbody tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if(cells.length > 1) {
+                    const text = row.textContent.toLowerCase();
+                    if(text.includes(query)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Salaries & Incentives - LogiTrack Pro</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck-flatbed me-2"></i>LogiTrack<span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/agent/dashboard}" class="sidebar-item "><i class="bi bi-card-list"></i>My Shipments</a>
+                <a th:href="@{/agent/expenses}" class="sidebar-item "><i class="bi bi-fuel-pump-fill"></i>Refuel Expenses</a>
+                <a th:href="@{/agent/salaries}" class="sidebar-item active"><i class="bi bi-wallet-fill"></i>My Salary</a>
+                <a th:href="@{/agent/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>My Ratings</a>
+                <a th:href="@{/agent/attendance}" class="sidebar-item "><i class="bi bi-calendar-check-fill"></i>My Attendance</a>
+                <a th:href="@{/agent/leaves}" class="sidebar-item "><i class="bi bi-calendar-minus-fill"></i>My Leaves</a>
+                <a th:href="@{/agent/documents}" class="sidebar-item "><i class="bi bi-file-earmark-medical-fill"></i>My Documents</a>
+                
+                <!-- My Profile Dropdown/Submenu -->
+                <a href="#profileSubmenu" data-bs-toggle="collapse" class="sidebar-item d-flex justify-content-between align-items-center " aria-expanded="false">
+                    <span><i class="bi bi-person-circle"></i>My Profile</span>
+                    <i class="bi bi-chevron-down small" style="margin-right:0; font-size: 0.8rem;"></i>
+                </a>
+                <div class="collapse " id="profileSubmenu">
+                    <a th:href="@{/agent/profile}" class="sidebar-item " style="padding-left: 2.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-person-badge-fill"></i>Profile Details
+                    </a>
+                    <a th:href="@{/agent/change-password}" class="sidebar-item " style="padding-left: 2.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-key-fill"></i>Change Password
+                    </a>
+                </div>
+
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='My Salaries & Incentives')}"></div>
+
+            <div class="content-body">
+                <!-- Notifications -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <span class="app-overview-tag">Salary & Earnings</span>
+                <h2 class="app-page-title">My Salaries & Incentives</h2>
+
+                <!-- Current Month Estimates (KPI/Metrics) -->
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <div class="card custom-card p-4 h-100 bg-white">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-calendar3 text-primary me-2"></i>Current Month Progress</h5>
+                            <div class="row text-secondary">
+                                <div class="col-md-6 mb-2"><strong>Period:</strong> <span th:text="${currentMonthName + ' ' + currentYear}">June 2026</span></div>
+                                <div class="col-md-6 mb-2"><strong>Completed Deliveries:</strong> <span class="badge bg-success font-weight-bold" th:text="${completedDeliveries}">0</span></div>
+                                <div class="col-md-12 mb-2">
+                                    <strong>Estimated Incentive:</strong> 
+                                    <span class="text-success font-weight-bold" th:text="${'₹' + estimatedIncentive}">₹0.00</span>
+                                    <br/><small class="text-muted">(Calculated at ₹20 per successful delivery)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card custom-card p-4 h-100 bg-light text-center justify-content-center">
+                            <h5 class="mb-2 font-weight-bold text-dark"><i class="bi bi-piggy-bank-fill me-2 text-warning"></i>Incentive Policy</h5>
+                            <p class="small text-muted mb-0">Every delivered package counts! Keep delivering safely and efficiently to maximize your incentives.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Salary History Table -->
+                <div class="card custom-card p-4">
+                    <h5 class="font-weight-bold mb-4"><i class="bi bi-journal-text me-2"></i>Salary Slips & Payout History</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Basic Salary</th>
+                                    <th>Incentive</th>
+                                    <th>Bonus</th>
+                                    <th>Fuel Reimb.</th>
+                                    <th>Deductions</th>
+                                    <th>Net Salary</th>
+                                    <th>Status</th>
+                                    <th>Payout Date</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="salary : ${salaries}">
+                                    <td class="font-weight-bold" th:text="${salary.month + ' ' + salary.year}">June 2026</td>
+                                    <td th:text="${'₹' + salary.basicSalary}">₹15000.00</td>
+                                    <td th:text="${'₹' + salary.incentive}">₹120.00</td>
+                                    <td th:text="${'₹' + salary.bonus}">₹0.00</td>
+                                    <td th:text="${'₹' + salary.fuelReimbursement}">₹0.00</td>
+                                    <td class="text-danger" th:text="${'-₹' + salary.deductions}">-₹0.00</td>
+                                    <td class="font-weight-bold text-dark" th:text="${'₹' + salary.netSalary}">₹15120.00</td>
+                                    <td>
+                                        <span class="badge rounded-pill" 
+                                              th:classappend="${salary.paymentStatus == 'PAID' ? 'bg-success' : 'bg-warning text-dark'}" 
+                                              th:text="${salary.paymentStatus}">PENDING</span>
+                                    </td>
+                                    <td th:text="${salary.paymentDate != null ? #temporals.format(salary.paymentDate, 'yyyy-MM-dd HH:mm') : '—'}">2026-06-15 10:15</td>
+                                    <td class="text-end">
+                                        <a th:href="@{/agent/salaries/slip/{id}(id=${salary.salaryId})}" class="btn btn-sm btn-outline-dark rounded-pill px-3 me-1 font-weight-bold">
+                                            <i class="bi bi-eye me-1"></i>View
+                                        </a>
+                                        <a th:href="@{/agent/salaries/slip/download/{id}(id=${salary.salaryId})}" class="btn btn-sm btn-outline-primary rounded-pill px-3 font-weight-bold">
+                                            <i class="bi bi-file-pdf me-1"></i>PDF
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(salaries)}">
+                                    <td colspan="10" class="text-center text-muted py-5">
+                                        <i class="bi bi-wallet2 fs-1 text-muted"></i>
+                                        <p class="mt-2 mb-0">No salary slips have been generated for you yet.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

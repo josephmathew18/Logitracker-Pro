@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Attendance - Agent Operational Portal</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck-flatbed me-2"></i>LogiTrack<span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/agent/dashboard}" class="sidebar-item "><i class="bi bi-card-list"></i>My Shipments</a>
+                <a th:href="@{/agent/expenses}" class="sidebar-item "><i class="bi bi-fuel-pump-fill"></i>Refuel Expenses</a>
+                <a th:href="@{/agent/salaries}" class="sidebar-item "><i class="bi bi-wallet-fill"></i>My Salary</a>
+                <a th:href="@{/agent/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>My Ratings</a>
+                <a th:href="@{/agent/attendance}" class="sidebar-item active"><i class="bi bi-calendar-check-fill"></i>My Attendance</a>
+                <a th:href="@{/agent/leaves}" class="sidebar-item "><i class="bi bi-calendar-minus-fill"></i>My Leaves</a>
+                <a th:href="@{/agent/documents}" class="sidebar-item "><i class="bi bi-file-earmark-medical-fill"></i>My Documents</a>
+                
+                <!-- My Profile Dropdown/Submenu -->
+                <a href="#profileSubmenu" data-bs-toggle="collapse" class="sidebar-item d-flex justify-content-between align-items-center " aria-expanded="false">
+                    <span><i class="bi bi-person-circle"></i>My Profile</span>
+                    <i class="bi bi-chevron-down small" style="margin-right:0; font-size: 0.8rem;"></i>
+                </a>
+                <div class="collapse " id="profileSubmenu">
+                    <a th:href="@{/agent/profile}" class="sidebar-item " style="padding-left: 2.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-person-badge-fill"></i>Profile Details
+                    </a>
+                    <a th:href="@{/agent/change-password}" class="sidebar-item " style="padding-left: 2.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-key-fill"></i>Change Password
+                    </a>
+                </div>
+
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Daily Shifts')}"></div>
+
+            <div class="content-body">
+                <!-- Notifications -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <span class="app-overview-tag">Work & Attendance</span>
+                <h2 class="app-page-title">Daily Shifts</h2>
+
+                <div class="row g-4">
+                    <!-- Left: Check In/Out panel -->
+                    <div class="col-lg-5">
+                        <div class="card custom-card p-5 text-center h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <h4 class="font-weight-bold mb-2">Shift Clock</h4>
+                                <div id="liveClock" class="fw-bold mb-4 text-primary" style="font-size: 2.25rem;">00:00:00 AM</div>
+                                
+                                <!-- State 1: Awaiting Check-In -->
+                                <div th:if="${todayRecord == null}">
+                                    <div class="alert alert-secondary py-3 mb-4 rounded-3 border">
+                                        <i class="bi bi-shield-lock-fill fs-3 mb-2 d-block text-secondary"></i>
+                                        <span class="font-weight-bold d-block text-dark">Shift Offline</span>
+                                        <small class="text-muted">Perform check-in to start logging hours.</small>
+                                    </div>
+                                    <form th:action="@{/agent/attendance/check-in}" method="POST">
+                                        <button type="submit" class="btn btn-primary-custom w-100 py-3 rounded-pill" style="font-size:1.1rem; font-weight:700;">
+                                            <i class="bi bi-box-arrow-in-right me-2"></i>Check In Shift
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <!-- State 2: Checked-In, Active shift -->
+                                <div th:if="${todayRecord != null && todayRecord.checkOutTime == null}">
+                                    <div class="alert alert-success py-3 mb-4 rounded-3 border-success-subtle bg-success-subtle text-success">
+                                        <i class="bi bi-activity fs-3 mb-2 d-block"></i>
+                                        <span class="font-weight-bold d-block">Shift Active</span>
+                                        <small th:text="${'Checked in at ' + #temporals.format(todayRecord.checkInTime, 'hh:mm a')}">Checked in at 09:00 AM</small>
+                                        <small th:if="${todayRecord.late}" class="badge bg-warning text-dark font-weight-bold ms-1" style="font-size:0.65rem;">LATE ARRIVAL</small>
+                                    </div>
+                                    <form th:action="@{/agent/attendance/check-out}" method="POST">
+                                        <button type="submit" class="btn btn-danger w-100 py-3 rounded-pill" style="font-size:1.1rem; font-weight:700;">
+                                            <i class="bi bi-box-arrow-left me-2"></i>Check Out Shift
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <!-- State 3: Shift Ended -->
+                                <div th:if="${todayRecord != null && todayRecord.checkOutTime != null}">
+                                    <div class="alert alert-dark py-3 mb-4 rounded-3 border">
+                                        <i class="bi bi-calendar-check-fill fs-3 mb-2 d-block text-success"></i>
+                                        <span class="font-weight-bold d-block text-dark">Shift Completed</span>
+                                        <small class="text-muted d-block" th:text="${'In: ' + #temporals.format(todayRecord.checkInTime, 'hh:mm a') + ' | Out: ' + #temporals.format(todayRecord.checkOutTime, 'hh:mm a')}">Details</small>
+                                        <small class="text-primary font-weight-bold d-block mt-1" th:text="${'Total Hours: ' + todayRecord.workingHours + ' hrs'}">Total: 8.5 hrs</small>
+                                    </div>
+                                    <button class="btn btn-secondary w-100 py-3 rounded-pill cursor-not-allowed" disabled>
+                                        <i class="bi bi-check-all me-2"></i>Day Completed
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 pt-4 border-top">
+                                <p class="small text-muted mb-0">Daily shift check-ins are tracked and reviewed monthly for incentives.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Attendance History table -->
+                    <div class="col-lg-7">
+                        <div class="card custom-card p-4 h-100">
+                            <h5 class="font-weight-bold mb-3"><i class="bi bi-calendar3 me-2 text-info"></i>Shift History Logs</h5>
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover table-custom align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Check-In</th>
+                                            <th>Check-Out</th>
+                                            <th>Hours</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="hist : ${attendanceHistory}">
+                                            <td class="font-weight-bold" th:text="${hist.date}">Date</td>
+                                            <td th:text="${hist.checkInTime != null ? #temporals.format(hist.checkInTime, 'hh:mm a') : '-'}">Check-In</td>
+                                            <td th:text="${hist.checkOutTime != null ? #temporals.format(hist.checkOutTime, 'hh:mm a') : '-'}">Check-Out</td>
+                                            <td th:text="${hist.workingHours != null ? hist.workingHours + ' hrs' : '-'}">Hours</td>
+                                            <td>
+                                                <span class="badge" th:classappend="${hist.status == 'PRESENT' ? 'bg-success' : 'bg-warning text-dark'}" th:text="${hist.status}">PRESENT</span>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(attendanceHistory)}">
+                                            <td colspan="5" class="text-center text-muted py-5">No shift history found.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Clock script -->
+    <script>
+        function updateClock() {
+            const clockEl = document.getElementById('liveClock');
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let seconds = now.getSeconds();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            
+            clockEl.textContent = `${hours}:${minutes}:${seconds} ${ampm}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+
+    </script>
+</body>
+</html>

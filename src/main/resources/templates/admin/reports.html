@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports & Expenses - Delivery Service Provider Management System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar (Desktop-only) -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck me-2"></i>LogiTrack <span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/admin/dashboard}" class="sidebar-item "><i class="bi bi-grid"></i>Dashboard</a>
+                <a th:href="@{/admin/agents}" class="sidebar-item "><i class="bi bi-people-fill"></i>Manage Agents</a>
+                <a th:href="@{/admin/vehicles}" class="sidebar-item "><i class="bi bi-truck"></i>Manage Vehicles</a>
+                <a th:href="@{/admin/assign}" class="sidebar-item "><i class="bi bi-plus-circle-fill"></i>Allocate Deliveries</a>
+                <a th:href="@{/admin/monitor}" class="sidebar-item "><i class="bi bi-geo-alt-fill"></i>Monitor Deliveries</a>
+                <a th:href="@{/admin/reports}" class="sidebar-item active"><i class="bi bi-file-earmark-bar-graph-fill"></i>Reports & Expenses</a>
+                <a th:href="@{/admin/payments}" class="sidebar-item "><i class="bi bi-wallet2"></i>Salary & Payments</a>
+                <a th:href="@{/admin/refunds}" class="sidebar-item "><i class="bi bi-arrow-counterclockwise"></i>Refund Management</a>
+                <a th:href="@{/admin/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>Feedback Reviews</a>
+                <a th:href="@{/admin/attendance}" class="sidebar-item "><i class="bi bi-calendar-check-fill"></i>Attendance</a>
+                <a th:href="@{/admin/leaves}" class="sidebar-item "><i class="bi bi-calendar-minus-fill"></i>Leaves</a>
+                <a th:href="@{/admin/maintenance}" class="sidebar-item "><i class="bi bi-wrench"></i>Maintenance</a>
+                <a th:href="@{/admin/performance}" class="sidebar-item "><i class="bi bi-graph-up-arrow"></i>Performance</a>
+                <a th:href="@{/admin/analytics}" class="sidebar-item "><i class="bi bi-pie-chart-fill"></i>Analytics</a>
+                <a th:href="@{/admin/documents}" class="sidebar-item "><i class="bi bi-file-earmark-medical-fill"></i>Documents</a>
+                <a th:href="@{/admin/audit-logs}" class="sidebar-item "><i class="bi bi-shield-check"></i>Audit Logs</a>
+                <a th:href="@{/admin/agents/history}" class="sidebar-item "><i class="bi bi-clock-history"></i>Agent History</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Top App Header (Mobile-only) -->
+            <div class="app-header">
+                <i class="bi bi-list app-header-icon"></i>
+                <h1 class="app-header-title">LogiTrack Pro</h1>
+                <div class="d-flex gap-3">
+                    <i class="bi bi-search app-header-icon"></i>
+                    <i class="bi bi-bell app-header-icon"></i>
+                </div>
+            </div>
+
+            <!-- Desktop Navbar (Desktop-only) -->
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Reports & Expenses')}"></div>
+
+            <div class="content-body">
+                <!-- Tabs navigation for different reports -->
+                <ul class="nav nav-pills mb-4" id="reportTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active rounded-pill px-4" id="deliveries-tab" data-bs-toggle="pill"
+                            data-bs-target="#deliveries-pane" type="button" role="tab"><i
+                                class="bi bi-card-checklist me-2"></i>Deliveries Ledger</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill px-4 ms-2" id="expenses-tab" data-bs-toggle="pill"
+                            data-bs-target="#expenses-pane" type="button" role="tab"><i
+                                class="bi bi-fuel-pump-fill me-2"></i>Agent Fuel Expenses</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="reportTabsContent">
+                    <!-- Deliveries Tab -->
+                    <div class="tab-pane fade show active" id="deliveries-pane" role="tabpanel" tabindex="0">
+                        <div class="card custom-card p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="font-weight-bold mb-0">Delivery Bookings Log</h5>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i
+                                        class="bi bi-printer-fill me-2"></i>Print Ledger</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-custom align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Customer</th>
+                                            <th>Assigned Agent</th>
+                                            <th>Vehicle</th>
+                                            <th>Pickup Address</th>
+                                            <th>Delivery Address</th>
+                                            <th>Package Info</th>
+                                            <th>Status</th>
+                                            <th>Cost</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="delivery : ${deliveries}">
+                                            <td class="font-weight-bold" th:text="${'#DEL-' + delivery.id}">#DEL-101
+                                            </td>
+                                            <td th:text="${delivery.customer.name}">Customer</td>
+                                            <td>
+                                                <span th:if="${delivery.agent != null}"
+                                                    th:text="${delivery.agent?.name}">Agent</span>
+                                                <span th:if="${delivery.agent == null}" class="text-muted small">Not
+                                                    Assigned</span>
+                                            </td>
+                                            <td>
+                                                <span th:if="${delivery.vehicle != null}"
+                                                    th:text="${delivery.vehicle?.licensePlate}">Vehicle</span>
+                                                <span th:if="${delivery.vehicle == null}"
+                                                    class="text-muted small">-</span>
+                                            </td>
+                                            <td th:text="${delivery.pickupAddress}">Pickup</td>
+                                            <td th:text="${delivery.deliveryAddress}">Delivery</td>
+                                            <td th:text="${delivery.packageDetails}">Package Details</td>
+                                            <td>
+                                                <span class="badge badge-pill-custom"
+                                                    th:classappend="${#strings.toLowerCase(delivery.status) == 'pending' ? 'badge-pending' : 
+                                                                        #strings.toLowerCase(delivery.status) == 'assigned' ? 'badge-assigned' : 
+                                                                        #strings.toLowerCase(delivery.status) == 'picked_up' ? 'badge-pickedup' : 
+                                                                        #strings.toLowerCase(delivery.status) == 'in_transit' ? 'badge-intransit' : 
+                                                                        #strings.toLowerCase(delivery.status) == 'delivered' ? 'badge-delivered' : 'badge-rejected'}"
+                                                    th:text="${delivery.status}">Pending</span>
+                                            </td>
+                                            <td class="font-weight-bold text-dark"
+                                                th:text="${'₹' + delivery.totalCost}">₹0.00</td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(deliveries)}">
+                                            <td colspan="9" class="text-center text-muted py-5">No delivery bookings
+                                                found.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expenses Tab -->
+                    <div class="tab-pane fade" id="expenses-pane" role="tabpanel" tabindex="0">
+                        <div class="card custom-card p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="font-weight-bold mb-0">Agent Fuel Refueling Receipts</h5>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i
+                                        class="bi bi-printer-fill me-2"></i>Print Expenses</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-custom align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Receipt ID</th>
+                                            <th>Agent ID</th>
+                                            <th>Agent Name</th>
+                                            <th>Expense Date</th>
+                                            <th>Fuel Quantity (Ltr)</th>
+                                            <th>Price per Litre</th>
+                                            <th>Total Reimbursable</th>
+                                            <th>Uploaded Bill Image</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="expense : ${expenses}">
+                                            <td class="font-weight-bold" th:text="${'#EXP-' + expense.id}">#EXP-201</td>
+                                            <td th:text="${expense.agent.id}">AGENT-1001</td>
+                                            <td th:text="${expense.agent.name}">David Smith</td>
+                                            <td th:text="${expense.expenseDate}">2026-06-12</td>
+                                            <td th:text="${expense.quantity + ' L'}">10 L</td>
+                                            <td th:text="${'₹' + expense.price}">₹1.50</td>
+                                            <td class="font-weight-bold text-danger" th:text="${'₹' + expense.total}">₹0.00</td>
+                                            <td>
+                                                <button th:if="${expense.billImagePath != null}"
+                                                    class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                                                    data-bs-toggle="modal"
+                                                    th:data-bs-target="${'#billModal' + expense.id}">
+                                                    <i class="bi bi-image me-1"></i>View Bill
+                                                </button>
+                                                <span th:if="${expense.billImagePath == null}"
+                                                    class="text-muted small">No Image Uploaded</span>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(expenses)}">
+                                            <td colspan="8" class="text-center text-muted py-5">No fuel expense claims
+                                                uploaded by agents.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sticky Bottom Tab Navigation (Mobile-only) -->
+            <div class="bottom-nav">
+                <a th:href="@{/admin/dashboard}" class="bottom-nav-item active">
+                    <div class="bottom-nav-icon-container">
+                        <i class="bi bi-grid"></i>
+                    </div>
+                    <span>Home</span>
+                </a>
+                <a th:href="@{/admin/assign}" class="bottom-nav-item">
+                    <div class="bottom-nav-icon-container">
+                        <i class="bi bi-clipboard2-data"></i>
+                    </div>
+                    <span>Requests</span>
+                </a>
+                <a th:href="@{/admin/agents}" class="bottom-nav-item">
+                    <div class="bottom-nav-icon-container">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <span>Agents</span>
+                </a>
+                <a th:href="@{/logout}" class="bottom-nav-item text-danger">
+                    <div class="bottom-nav-icon-container text-danger">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </div>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modals (placed outside of table elements to ensure correct rendering positioning) -->
+    <div th:each="expense : ${expenses}">
+        <div th:if="${expense.billImagePath != null}" class="modal fade" th:id="${'billModal' + expense.id}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 rounded-4 shadow-lg text-dark">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title font-weight-bold text-dark" th:text="${'Fuel Bill Receipt #EXP-' + expense.id}">Bill Receipt</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center bg-dark p-3 rounded-4 mt-3">
+                        <img th:src="${expense.billImagePath}" class="img-fluid rounded shadow" alt="Fuel Bill Invoice">
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal" style="font-size: 0.85rem; font-weight: 600;">Close</button>
+                    </div>
+                    <div class="modal-footer border-0 pt-0" style="display: none;">
+                        <!-- Keep modal static/no movement standard container -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

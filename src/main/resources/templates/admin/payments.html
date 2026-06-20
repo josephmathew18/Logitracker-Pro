@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salary & Payments - LogiTrack Pro</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar (Desktop-only) -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck me-2"></i>LogiTrack <span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/admin/dashboard}" class="sidebar-item "><i class="bi bi-grid"></i>Dashboard</a>
+                <a th:href="@{/admin/agents}" class="sidebar-item "><i class="bi bi-people-fill"></i>Manage Agents</a>
+                <a th:href="@{/admin/vehicles}" class="sidebar-item "><i class="bi bi-truck"></i>Manage Vehicles</a>
+                <a th:href="@{/admin/assign}" class="sidebar-item "><i class="bi bi-plus-circle-fill"></i>Allocate Deliveries</a>
+                <a th:href="@{/admin/monitor}" class="sidebar-item "><i class="bi bi-geo-alt-fill"></i>Monitor Deliveries</a>
+                <a th:href="@{/admin/reports}" class="sidebar-item "><i class="bi bi-file-earmark-bar-graph-fill"></i>Reports & Expenses</a>
+                <a th:href="@{/admin/payments}" class="sidebar-item active"><i class="bi bi-wallet2"></i>Salary & Payments</a>
+                <a th:href="@{/admin/refunds}" class="sidebar-item "><i class="bi bi-arrow-counterclockwise"></i>Refund Management</a>
+                <a th:href="@{/admin/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>Feedback Reviews</a>
+                <a th:href="@{/admin/attendance}" class="sidebar-item "><i class="bi bi-calendar-check-fill"></i>Attendance</a>
+                <a th:href="@{/admin/leaves}" class="sidebar-item "><i class="bi bi-calendar-minus-fill"></i>Leaves</a>
+                <a th:href="@{/admin/maintenance}" class="sidebar-item "><i class="bi bi-wrench"></i>Maintenance</a>
+                <a th:href="@{/admin/performance}" class="sidebar-item "><i class="bi bi-graph-up-arrow"></i>Performance</a>
+                <a th:href="@{/admin/analytics}" class="sidebar-item "><i class="bi bi-pie-chart-fill"></i>Analytics</a>
+                <a th:href="@{/admin/documents}" class="sidebar-item "><i class="bi bi-file-earmark-medical-fill"></i>Documents</a>
+                <a th:href="@{/admin/audit-logs}" class="sidebar-item "><i class="bi bi-shield-check"></i>Audit Logs</a>
+                <a th:href="@{/admin/agents/history}" class="sidebar-item "><i class="bi bi-clock-history"></i>Agent History</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Desktop Navbar (Desktop-only) -->
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Salary & Payments')}"></div>
+
+            <!-- Content Body -->
+            <div class="content-body">
+                <!-- Notifications / Success & Error Messages -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <span class="app-overview-tag">Financial Overview</span>
+                <h2 class="app-page-title">P&L & Cash Flow Reports</h2>
+
+                <!-- Financial Metrics Grid -->
+                <div class="metrics-grid mb-4">
+                    <!-- Daily Revenue -->
+                    <div class="metric-card">
+                        <div class="metric-card-top">
+                            <div class="metric-icon-box icon-cyan">
+                                <i class="bi bi-cash-stack"></i>
+                            </div>
+                            <span class="metric-badge text-success bg-success-subtle">Today</span>
+                        </div>
+                        <div>
+                            <div class="metric-label">Daily Revenue</div>
+                            <h3 class="metric-value" th:text="${'₹' + reports.dailyRevenue}">₹0.00</h3>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Revenue -->
+                    <div class="metric-card">
+                        <div class="metric-card-top">
+                            <div class="metric-icon-box icon-green">
+                                <i class="bi bi-calendar-event"></i>
+                            </div>
+                            <span class="metric-badge text-success bg-success-subtle">This Month</span>
+                        </div>
+                        <div>
+                            <div class="metric-label">Monthly Revenue</div>
+                            <h3 class="metric-value" th:text="${'₹' + reports.monthlyRevenue}">₹0.00</h3>
+                        </div>
+                    </div>
+
+                    <!-- Total Revenue -->
+                    <div class="metric-card">
+                        <div class="metric-card-top">
+                            <div class="metric-icon-box icon-blue">
+                                <i class="bi bi-graph-up-arrow"></i>
+                            </div>
+                            <span class="metric-badge text-primary bg-primary-subtle">All Time</span>
+                        </div>
+                        <div>
+                            <div class="metric-label">Total Revenue</div>
+                            <h3 class="metric-value" th:text="${'₹' + reports.totalRevenue}">₹0.00</h3>
+                        </div>
+                    </div>
+
+                    <!-- Total Expenses -->
+                    <div class="metric-card">
+                        <div class="metric-card-top">
+                            <div class="metric-icon-box icon-amber">
+                                <i class="bi bi-arrow-down-right-circle"></i>
+                            </div>
+                            <span class="metric-badge text-danger bg-danger-subtle">Outflow</span>
+                        </div>
+                        <div>
+                            <div class="metric-label">Total Expenses</div>
+                            <h3 class="metric-value" th:text="${'₹' + reports.totalExpenses}">₹0.00</h3>
+                            <div class="text-muted small mt-1">
+                                Salaries: ₹<span th:text="${reports.totalSalaryExpenses}">0</span> | Fuel: ₹<span th:text="${reports.totalFuelExpenses}">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Net Profit / Loss -->
+                    <div class="metric-card bg-light border-0">
+                        <div class="metric-card-top">
+                            <div class="metric-icon-box" th:classappend="${reports.totalProfit >= 0 ? 'icon-green' : 'icon-amber'}">
+                                <i class="bi" th:classappend="${reports.totalProfit >= 0 ? 'bi-shield-check' : 'bi-shield-exclamation'}"></i>
+                            </div>
+                            <span class="metric-badge font-weight-bold" 
+                                  th:classappend="${reports.totalProfit >= 0 ? 'text-success bg-success-subtle' : 'text-danger bg-danger-subtle'}"
+                                  th:text="${reports.totalProfit >= 0 ? 'PROFIT' : 'LOSS'}">PROFIT</span>
+                        </div>
+                        <div>
+                            <div class="metric-label">Net Income (P&L)</div>
+                            <h3 class="metric-value" 
+                                th:classappend="${reports.totalProfit >= 0 ? 'text-success' : 'text-danger'}" 
+                                th:text="${'₹' + reports.totalProfit}">₹0.00</h3>
+                        </div>
+                    </div>
+
+                    <!-- Total Orders -->
+                    <div class="metric-card">
+                        <div class="metric-card-top">
+                            <div class="metric-icon-box icon-blue">
+                                <i class="bi bi-cart-check-fill"></i>
+                            </div>
+                            <span class="metric-badge text-primary bg-primary-subtle">Orders</span>
+                        </div>
+                        <div>
+                            <div class="metric-label">Total Orders</div>
+                            <h3 class="metric-value text-primary" th:text="${reports.totalOrders}">0</h3>
+                        </div>
+                    </div>
+
+                    <!-- Successful Payments -->
+                    <div class="metric-card">
+                        <div class="metric-card-top">
+                            <div class="metric-icon-box icon-green">
+                                <i class="bi bi-shield-fill-check"></i>
+                            </div>
+                            <span class="metric-badge text-success bg-success-subtle">Paid</span>
+                        </div>
+                        <div>
+                            <div class="metric-label">Successful Payments</div>
+                            <h3 class="metric-value text-success" th:text="${reports.successfulPaymentsCount}">0</h3>
+                        </div>
+                    </div>
+
+                    <!-- Failed Payments -->
+                    <div class="metric-card">
+                        <div class="metric-card-top">
+                            <div class="metric-icon-box icon-amber">
+                                <i class="bi bi-shield-fill-x"></i>
+                            </div>
+                            <span class="metric-badge text-danger bg-danger-subtle">Failed</span>
+                        </div>
+                        <div>
+                            <div class="metric-label">Failed Payments</div>
+                            <h3 class="metric-value text-danger" th:text="${reports.failedPaymentsCount}">0</h3>
+                        </div>
+                    </div>
+
+                    <!-- Refunded Payments -->
+                    <div class="metric-card">
+                        <div class="metric-card-top">
+                            <div class="metric-icon-box icon-cyan">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </div>
+                            <span class="metric-badge text-info bg-info-subtle">Refunded</span>
+                        </div>
+                        <div>
+                            <div class="metric-label">Refunded Payments</div>
+                            <h3 class="metric-value text-info" th:text="${reports.refundedPaymentsCount}">0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Generate Salaries Form -->
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm rounded-4 mb-4">
+                            <div class="card-header bg-dark text-white rounded-top-4 py-3">
+                                <h5 class="card-title mb-0"><i class="bi bi-calculator me-2"></i>Generate Agent Salary</h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <form th:action="@{/admin/salaries/generate}" method="POST">
+                                    <div class="mb-3">
+                                        <label for="agentId" class="form-label font-weight-bold small">Select Agent</label>
+                                        <select class="form-select rounded-pill" id="agentId" name="agentId" required>
+                                            <option value="" disabled selected>Choose Agent...</option>
+                                            <option th:each="agent : ${agents}" 
+                                                    th:value="${agent.id}" 
+                                                    th:text="${agent.id + ' - ' + agent.name + ' (' + agent.status + ')'}"></option>
+                                        </select>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="month" class="form-label font-weight-bold small">Month</label>
+                                            <select class="form-select rounded-pill" id="month" name="month" required>
+                                                <option value="January">January</option>
+                                                <option value="February">February</option>
+                                                <option value="March">March</option>
+                                                <option value="April">April</option>
+                                                <option value="May">May</option>
+                                                <option value="June">June</option>
+                                                <option value="July">July</option>
+                                                <option value="August">August</option>
+                                                <option value="September">September</option>
+                                                <option value="October">October</option>
+                                                <option value="November">November</option>
+                                                <option value="December">December</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="year" class="form-label font-weight-bold small">Year</label>
+                                            <select class="form-select rounded-pill" id="year" name="year" required>
+                                                <!-- Options populated dynamically by JavaScript -->
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div id="salary-warning" class="alert alert-warning py-2 px-3 small rounded-pill mb-3" style="display: none;">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                        <span>Salary cannot be generated for past periods.</span>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="basicSalary" class="form-label font-weight-bold small">Basic Salary (₹)</label>
+                                        <input type="number" step="0.01" class="form-control rounded-pill" id="basicSalary" name="basicSalary" value="15000.00" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="bonus" class="form-label font-weight-bold small">Bonus (₹)</label>
+                                        <input type="number" step="0.01" class="form-control rounded-pill" id="bonus" name="bonus" value="0.00" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="fuelReimbursement" class="form-label font-weight-bold small">Fuel Reimbursement (₹)</label>
+                                        <input type="number" step="0.01" class="form-control rounded-pill" id="fuelReimbursement" name="fuelReimbursement" value="0.00" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="deductions" class="form-label font-weight-bold small">Deductions (₹)</label>
+                                        <input type="number" step="0.01" class="form-control rounded-pill" id="deductions" name="deductions" value="0.00" required>
+                                    </div>
+                                    <div class="text-muted small mb-3">
+                                        <i class="bi bi-info-circle me-1"></i> Delivery incentives (₹20 per delivered package) are automatically calculated and added.
+                                    </div>
+                                    <button type="submit" class="btn btn-dark w-100 rounded-pill py-2 font-weight-bold">
+                                        <i class="bi bi-file-earmark-plus me-1"></i> Generate Slip
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Salary Slip Records -->
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm rounded-4 mb-4">
+                            <div class="card-header bg-white py-3 border-0">
+                                <h5 class="card-title text-dark mb-0"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Generated Salary Slips</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light text-muted small">
+                                            <tr>
+                                                <th class="ps-4">ID</th>
+                                                <th>Agent ID</th>
+                                                <th>Period</th>
+                                                <th>Base Salary</th>
+                                                <th>Incentives</th>
+                                                <th>Net Payout</th>
+                                                <th>Status</th>
+                                                <th class="text-end pe-4">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="small">
+                                            <tr th:each="salary : ${salaries}">
+                                                <td class="ps-4 font-weight-bold text-dark" th:text="${salary.salaryId}">1</td>
+                                                <td>
+                                                    <span class="font-weight-bold text-dark" th:text="${salary.agent.id}">1001</span>
+                                                    <br/>
+                                                    <span class="text-muted small" th:text="${salary.agent.name}">Agent Name</span>
+                                                </td>
+                                                <td th:text="${salary.month + ' ' + salary.year}">June 2026</td>
+                                                <td th:text="${'₹' + salary.basicSalary}">₹15000.00</td>
+                                                <td th:text="${'₹' + salary.incentive}">₹140.00</td>
+                                                <td class="font-weight-bold text-dark" th:text="${'₹' + salary.netSalary}">₹15140.00</td>
+                                                <td>
+                                                    <span class="badge rounded-pill" 
+                                                          th:classappend="${salary.paymentStatus == 'PAID' ? 'bg-success' : 'bg-warning text-dark'}" 
+                                                          th:text="${salary.paymentStatus}">PENDING</span>
+                                                </td>
+                                                <td class="text-end pe-4">
+                                                    <button th:if="${salary.paymentStatus == 'PENDING'}" 
+                                                            class="btn btn-sm btn-success rounded-pill px-3 py-1 font-weight-bold" 
+                                                            data-bs-toggle="modal" 
+                                                            th:data-bs-target="${'#salaryPaymentModal' + salary.salaryId}">
+                                                        <i class="bi bi-wallet2 me-1"></i>Pay Salary
+                                                    </button>
+                                                    <span th:if="${salary.paymentStatus == 'PAID'}" class="text-success small"><i class="bi bi-check-lg me-1"></i>Completed</span>
+                                                </td>
+                                            </tr>
+                                            <tr th:if="${#lists.isEmpty(salaries)}">
+                                                <td colspan="8" class="text-center text-muted py-4">No salary slips have been generated yet.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Salary Payment Form Modals -->
+                <div th:each="salary : ${salaries}">
+                    <div th:if="${salary.paymentStatus == 'PENDING'}" class="modal fade text-start" th:id="${'salaryPaymentModal' + salary.salaryId}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content" style="border-radius: 1rem; border: none; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="modal-title font-weight-bold text-dark">Select Payment Method</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <form th:action="@{/admin/salaries/pay/{id}(id=${salary.salaryId})}" method="POST" th:id="${'payForm' + salary.salaryId}">
+                                    <div class="modal-body pt-3">
+                                        <p class="text-secondary small mb-3">You are checking out Salary Payout for Agent <strong th:text="${salary.agent.name}">Agent Name</strong>. Amount Payable: <strong class="text-success" th:text="${'₹' + salary.netSalary}">₹0.00</strong></p>
+                                        
+                                        <div class="mb-3">
+                                            <label for="paymentMethod" class="form-label font-weight-bold small">Payment Option</label>
+                                            <select class="form-select rounded-pill" name="paymentMethod" th:id="${'methodSelect' + salary.salaryId}" onchange="toggleTxnInput(this)" required>
+                                                <option value="RAZORPAY">Razorpay (Payment Link)</option>
+                                                <option value="CARD">Credit/Debit Card (Mock)</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Card simulated fields -->
+                                        <div th:id="${'txnFields' + salary.salaryId}" style="display: none;">
+                                            <div class="mb-3">
+                                                <label th:id="${'txnLabel' + salary.salaryId}" class="form-label font-weight-bold small">Card Number</label>
+                                                <input type="text" class="form-control rounded-pill" name="transactionId" placeholder="Enter any card number" th:id="${'txnInput' + salary.salaryId}">
+                                                <small th:id="${'txnHelp' + salary.salaryId}" class="text-muted">Cardholder name is not required and has been omitted.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer border-0 pt-0">
+                                        <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal" style="font-size: 0.85rem; font-weight: 600;">Cancel</button>
+                                        <button type="submit" class="btn btn-success px-4 rounded-pill" style="font-size: 0.85rem; font-weight: 600;">Confirm Payout</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search and Date Filter Form -->
+                <div class="card border-0 shadow-sm rounded-4 mb-4 p-3 bg-white">
+                    <h6 class="font-weight-bold mb-3 text-secondary"><i class="bi bi-filter-left me-1"></i>Search & Filter Payments</h6>
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-5">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0 rounded-start-pill"><i class="bi bi-search"></i></span>
+                                <input type="text" id="searchInput" class="form-control bg-light border-0 rounded-end-pill" placeholder="Search by Txn ID, Product, Customer...">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0 rounded-start-pill"><i class="bi bi-calendar3"></i></span>
+                                <input type="date" id="dateFilter" class="form-control bg-light border-0 rounded-end-pill">
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-end">
+                            <button id="resetFilters" class="btn btn-outline-secondary rounded-pill w-100">
+                                <i class="bi bi-x-circle me-1"></i> Reset Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customer Payment Transactions -->
+                <div class="card border-0 shadow-sm rounded-4 mt-3">
+                    <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title text-dark mb-0"><i class="bi bi-wallet-fill me-2"></i>Customer Transactions & Receipts</h5>
+                        <a th:href="@{/admin/reports/download}" class="btn btn-sm btn-dark rounded-pill px-3">
+                            <i class="bi bi-download me-1"></i>Download CSV Report
+                        </a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light text-muted small">
+                                    <tr>
+                                        <th class="ps-4">Txn ID</th>
+                                        <th>Order Info</th>
+                                        <th>Customer</th>
+                                        <th>Method</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th class="text-end pe-4">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="small" id="txnTableBody">
+                                    <tr th:each="pay : ${payments}">
+                                        <td class="ps-4 font-weight-bold text-dark" th:text="${pay.transactionId}">TXN-12345</td>
+                                        <td>
+                                            <span class="font-weight-bold text-dark" th:text="${pay.order.productName}">Product</span>
+                                            <span class="text-muted small" th:text="${' (Qty: ' + pay.order.quantity + ')'}">(Qty: 1)</span>
+                                            <br/>
+                                            <span class="text-muted small" th:text="${'Order ID: #' + pay.order.orderId}">Order ID</span>
+                                        </td>
+                                        <td>
+                                            <span th:text="${pay.customer.name}">Customer Name</span>
+                                            <br/>
+                                            <span class="text-muted small" th:text="${pay.customer.phone}">Phone</span>
+                                        </td>
+                                        <td th:text="${pay.paymentMethod}">UPI</td>
+                                        <td class="font-weight-bold text-dark" th:text="${'₹' + pay.amount}">₹450.00</td>
+                                        <td>
+                                            <span class="badge rounded-pill" 
+                                                  th:classappend="${pay.paymentStatus == 'SUCCESS' ? 'bg-success' : 
+                                                                    pay.paymentStatus == 'PENDING' ? 'bg-warning text-dark' : 
+                                                                    pay.paymentStatus == 'REFUNDED' ? 'bg-info' : 'bg-danger'}" 
+                                                  th:text="${pay.paymentStatus}">SUCCESS</span>
+                                            <br th:if="${pay.paymentStatus == 'FAILED' && pay.failureReason != null}"/>
+                                            <small class="text-danger d-block mt-1" style="font-size: 0.75rem; max-width: 150px; line-height: 1.1;" th:if="${pay.paymentStatus == 'FAILED' && pay.failureReason != null}" th:text="${pay.failureReason}">Reason</small>
+                                        </td>
+                                        <td th:text="${#temporals.format(pay.paymentDate, 'yyyy-MM-dd HH:mm')}">2026-06-15 10:15</td>
+                                        <td class="text-end pe-4">
+                                            <form th:if="${pay.paymentStatus == 'SUCCESS'}" th:action="@{/admin/payments/refund/{id}(id=${pay.paymentId})}" method="POST" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 font-weight-bold" onclick="return confirm('Are you sure you want to refund this payment?')">
+                                                    <i class="bi bi-arrow-counterclockwise me-1"></i>Refund
+                                                </button>
+                                            </form>
+                                            <span th:if="${pay.paymentStatus == 'REFUNDED'}" class="text-muted small"><i class="bi bi-check-lg me-1"></i>Refunded</span>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(payments)}">
+                                        <td colspan="8" class="text-center text-muted py-4">No customer payment transactions found.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sticky Bottom Tab Navigation (Mobile-only) -->
+            <div class="bottom-nav">
+                <a th:href="@{/admin/dashboard}" class="bottom-nav-item">
+                    <div class="bottom-nav-icon-container">
+                        <i class="bi bi-grid"></i>
+                    </div>
+                    <span>Home</span>
+                </a>
+                <a th:href="@{/admin/assign}" class="bottom-nav-item">
+                    <div class="bottom-nav-icon-container">
+                        <i class="bi bi-clipboard2-data"></i>
+                    </div>
+                    <span>Requests</span>
+                </a>
+                <a th:href="@{/admin/agents}" class="bottom-nav-item">
+                    <div class="bottom-nav-icon-container">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <span>Fleet</span>
+                </a>
+                <a th:href="@{/logout}" class="bottom-nav-item text-danger">
+                    <div class="bottom-nav-icon-container text-danger">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </div>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Search and Date Filter Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Salary form dynamic month validation
+            const yearSelect = document.getElementById('year');
+            const monthSelect = document.getElementById('month');
+            const warningDiv = document.getElementById('salary-warning');
+
+            if (yearSelect && monthSelect) {
+                const monthNames = [
+                    "January", "February", "March", "April", "May", "June",
+                    "July", "August", "September", "October", "November", "December"
+                ];
+
+                const currentDate = new Date();
+                const currentYear = currentDate.getFullYear();
+                const currentMonthIndex = currentDate.getMonth(); // 0 = Jan, 11 = Dec
+
+                // Populate Year options from current year to current year + 4
+                yearSelect.innerHTML = '';
+                for (let i = 0; i < 5; i++) {
+                    const yearOpt = document.createElement('option');
+                    yearOpt.value = currentYear + i;
+                    yearOpt.textContent = currentYear + i;
+                    yearSelect.appendChild(yearOpt);
+                }
+
+                // Set default month and year
+                yearSelect.value = currentYear;
+                monthSelect.value = monthNames[currentMonthIndex];
+
+                function updateMonths() {
+                    const selectedYear = parseInt(yearSelect.value);
+                    const selectedMonth = monthSelect.value;
+                    const selectedMonthIndex = monthNames.indexOf(selectedMonth);
+                    let isSelectionInvalid = false;
+
+                    Array.from(monthSelect.options).forEach((option, idx) => {
+                        if (selectedYear === currentYear) {
+                            if (idx < currentMonthIndex) {
+                                option.disabled = true;
+                                if (option.value === selectedMonth) {
+                                    isSelectionInvalid = true;
+                                }
+                            } else {
+                                option.disabled = false;
+                            }
+                        } else {
+                            option.disabled = false;
+                        }
+                    });
+
+                    // Show warning and handle submit button state
+                    const submitBtn = yearSelect.closest('form').querySelector('button[type="submit"]');
+                    if (isSelectionInvalid) {
+                        if (warningDiv) {
+                            warningDiv.style.display = 'block';
+                        }
+                        monthSelect.classList.add('is-invalid');
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                        }
+                    } else {
+                        if (warningDiv) {
+                            warningDiv.style.display = 'none';
+                        }
+                        monthSelect.classList.remove('is-invalid');
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                        }
+                    }
+                }
+
+                yearSelect.addEventListener('change', updateMonths);
+                monthSelect.addEventListener('change', updateMonths);
+
+                const form = yearSelect.closest('form');
+                if (form) {
+                    form.addEventListener('submit', function(event) {
+                        const selectedYear = parseInt(yearSelect.value);
+                        const selectedMonth = monthSelect.value;
+                        const selectedMonthIndex = monthNames.indexOf(selectedMonth);
+
+                        if (selectedYear === currentYear && selectedMonthIndex < currentMonthIndex) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            if (warningDiv) {
+                                warningDiv.style.display = 'block';
+                            }
+                            monthSelect.classList.add('is-invalid');
+                        }
+                    });
+                }
+
+                // Run validation initially
+                updateMonths();
+            }
+
+            const searchInput = document.getElementById('searchInput');
+            const dateFilter = document.getElementById('dateFilter');
+            const resetFilters = document.getElementById('resetFilters');
+            const tableRows = document.querySelectorAll('#txnTableBody tr');
+
+            function filterTable() {
+                const searchText = searchInput.value.toLowerCase().trim();
+                const filterDate = dateFilter.value; // YYYY-MM-DD
+
+                tableRows.forEach(row => {
+                    if (row.cells.length < 5) return;
+
+                    const txnId = row.cells[0].innerText.toLowerCase();
+                    const orderInfo = row.cells[1].innerText.toLowerCase();
+                    const customerInfo = row.cells[2].innerText.toLowerCase();
+                    const method = row.cells[3].innerText.toLowerCase();
+                    const dateText = row.cells[6].innerText.trim().substring(0, 10); // YYYY-MM-DD
+
+                    let matchesSearch = !searchText || 
+                                        txnId.includes(searchText) || 
+                                        orderInfo.includes(searchText) || 
+                                        customerInfo.includes(searchText) || 
+                                        method.includes(searchText);
+
+                    let matchesDate = !filterDate || (dateText === filterDate);
+
+                    if (matchesSearch && matchesDate) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            if (searchInput) searchInput.addEventListener('input', filterTable);
+            if (dateFilter) dateFilter.addEventListener('change', filterTable);
+            if (resetFilters) {
+                resetFilters.addEventListener('click', function() {
+                    searchInput.value = '';
+                    dateFilter.value = '';
+                    filterTable();
+                });
+            }
+        });
+
+        function toggleTxnInput(selectElement) {
+            const id = selectElement.id.replace('methodSelect', '');
+            const txnDiv = document.getElementById('txnFields' + id);
+            const labelEl = document.getElementById('txnLabel' + id);
+            const inputField = document.getElementById('txnInput' + id);
+            const helpEl = document.getElementById('txnHelp' + id);
+
+            if (selectElement.value === 'CARD') {
+                txnDiv.style.display = 'block';
+                inputField.setAttribute('required', 'required');
+                labelEl.innerText = "Card Number";
+                inputField.placeholder = "Enter any card number";
+                helpEl.innerText = "Cardholder name is not required and has been omitted.";
+            } else {
+                txnDiv.style.display = 'none';
+                inputField.removeAttribute('required');
+            }
+        }
+    </script>
+</body>
+</html>

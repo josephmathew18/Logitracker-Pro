@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Failed - LogiTrack Pro</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+    <!-- CSRF Meta Tags for AJAX / fetch requests -->
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck-flatbed me-2"></i>LogiTrack<span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/customer/dashboard}" class="sidebar-item "><i class="bi bi-grid-fill"></i>Client Dashboard</a>
+                <a th:href="@{/customer/orders}" class="sidebar-item "><i class="bi bi-cart-plus-fill"></i>Create Delivery Order</a>
+                <a th:href="@{/customer/payments}" class="sidebar-item "><i class="bi bi-credit-card-2-front"></i>Transactions</a>
+                <a th:href="@{/customer/cancellations}" class="sidebar-item "><i class="bi bi-x-octagon-fill"></i>Cancellations</a>
+                <a th:href="@{/customer/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>My Feedback</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Payment Status')}"></div>
+
+            <div class="content-body d-flex align-items-center justify-content-center" style="min-height: 70vh;">
+                <div class="card custom-card p-5 text-center shadow-lg border-0" style="max-width: 600px; border-radius: 1.5rem; background: rgba(255, 255, 255, 0.9);">
+                    <div class="mb-4">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-danger-subtle text-danger rounded-circle" style="width: 80px; height: 80px;">
+                            <i class="bi bi-x-circle-fill" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                    
+                    <h2 class="text-danger font-weight-bold mb-3">Transaction Failed</h2>
+                    <p class="text-secondary mb-4">We're sorry, but your payment for Order <strong th:text="${'#ORD-' + order.orderId}">#ORD-1</strong> could not be processed successfully.</p>
+                    
+                    <div class="bg-light p-4 rounded-3 text-start mb-4 border">
+                        <div class="row g-2 mb-2">
+                            <div class="col-5 text-muted small">Product Name:</div>
+                            <div class="col-7 font-weight-bold text-dark text-truncate" th:text="${order.productName}">Product Name</div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-5 text-muted small">Total Price:</div>
+                            <div class="col-7 font-weight-bold text-success" th:text="${'₹' + order.totalPrice}">₹0.00</div>
+                        </div>
+                        <div class="row g-2 border-top pt-2 mt-2">
+                            <div class="col-5 text-muted small">Reason for Failure:</div>
+                            <div class="col-7 text-danger font-weight-medium small" th:text="${failureReason}">Signature verification failed or cancelled.</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-light p-3 rounded-3 text-start mb-4 border border-warning-subtle" style="background-color: #FFFBEB !important;">
+                        <h6 class="text-warning-emphasis font-weight-bold mb-1"><i class="bi bi-info-circle-fill me-2"></i>Testing Tip for Razorpay Checkout</h6>
+                        <p class="small text-warning-emphasis mb-0 mt-1">To ensure your test transaction completes successfully, select <strong>Netbanking</strong> (with any test bank) OR use the domestic RuPay test card: <code>6527 6589 0000 1005</code> with CVV <code>123</code>.</p>
+                    </div>
+
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a th:href="@{/customer/orders}" class="btn btn-dark rounded-pill px-4 py-2 font-weight-bold">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Orders
+                        </a>
+                        <button class="btn btn-success rounded-pill px-4 py-2 font-weight-bold" 
+                                data-bs-toggle="modal" 
+                                th:data-bs-target="${'#paymentModal' + order.orderId}">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Retry Payment
+                        </button>
+                    </div>
+
+                    </div>
+
+                    <!-- Payment Form Modal (Recreated inside failed screen for retry workflow) -->
+                    <div class="modal fade text-start" th:id="${'paymentModal' + order.orderId}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content" style="border-radius: 1rem; border: none; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="modal-title font-weight-bold text-dark">Select Payment Method</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <form th:action="@{/customer/orders/pay}" method="POST" th:id="${'payForm' + order.orderId}" th:data-order-id="${order.orderId}" onsubmit="return handlePaymentSubmit(event, this)">
+                                    <input type="hidden" name="orderId" th:value="${order.orderId}">
+                                    <div class="modal-body pt-3">
+                                        <p class="text-secondary small mb-3">You are checking out for Order <strong th:text="${'#ORD-' + order.orderId}">#ORD-101</strong>. Amount Payable: <strong class="text-success" th:text="${'₹' + order.totalPrice}">₹0.00</strong></p>
+                                        
+                                        <div class="mb-3">
+                                            <label for="paymentMethod" class="form-label font-weight-bold small">Payment Option</label>
+                                            <select class="form-select rounded-pill" name="paymentMethod" th:id="${'methodSelect' + order.orderId}" onchange="toggleTxnInput(this)" required>
+                                                <option value="RAZORPAY">Razorpay (Test Mode)</option>
+                                                <option value="CARD">Credit/Debit Card (Mock)</option>
+                                                <option value="COD">Cash On Delivery (COD)</option>
+                                            </select>
+                                        </div>
+
+                                        <div th:id="${'txnFields' + order.orderId}" style="display: none;">
+                                            <div class="mb-3">
+                                                <label th:id="${'txnLabel' + order.orderId}" class="form-label font-weight-bold small">Transaction Reference / Reference ID</label>
+                                                <input type="text" class="form-control rounded-pill" name="transactionId" placeholder="e.g. TXN-1082531" th:id="${'txnInput' + order.orderId}">
+                                                <small th:id="${'txnHelp' + order.orderId}" class="text-muted">Enter a mock reference ID to simulate processing.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer border-0 pt-0">
+                                        <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal" style="font-size: 0.85rem; font-weight: 600;">Cancel</button>
+                                        <button type="submit" class="btn btn-success px-4 rounded-pill" style="font-size: 0.85rem; font-weight: 600;">Confirm Payout</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Razorpay Checkout Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <!-- Client-side script identical to orders.html to process retry payments -->
+    <script>
+        function toggleTxnInput(selectElement) {
+            const orderId = selectElement.id.replace('methodSelect', '');
+            const txnDiv = document.getElementById('txnFields' + orderId);
+            const labelEl = document.getElementById('txnLabel' + orderId);
+            const inputField = document.getElementById('txnInput' + orderId);
+            const helpEl = document.getElementById('txnHelp' + orderId);
+
+            if (selectElement.value === 'COD') {
+                txnDiv.style.display = 'block';
+                inputField.setAttribute('required', 'required');
+                labelEl.innerText = "Transaction Reference / Reference ID";
+                inputField.placeholder = "e.g. Will pay cash";
+                helpEl.innerText = "Enter a mock reference ID to simulate processing.";
+            } else if (selectElement.value === 'CARD') {
+                txnDiv.style.display = 'block';
+                inputField.setAttribute('required', 'required');
+                labelEl.innerText = "Card Number";
+                inputField.placeholder = "Enter any card number";
+                helpEl.innerText = "Cardholder name is not required and has been omitted.";
+            } else {
+                txnDiv.style.display = 'none';
+                inputField.removeAttribute('required');
+            }
+        }
+
+        function handlePaymentSubmit(event, formElement) {
+            const orderId = formElement.getAttribute('data-order-id');
+            const selectEl = document.getElementById('methodSelect' + orderId);
+            if (selectEl.value === 'RAZORPAY') {
+                event.preventDefault();
+                payWithRazorpay(orderId);
+                return false;
+            }
+            return true;
+        }
+
+        function payWithRazorpay(orderId) {
+            const modalEl = document.getElementById('paymentModal' + orderId);
+            const closeBtn = modalEl.querySelector('[data-bs-dismiss="modal"]');
+            if (closeBtn) {
+                closeBtn.click();
+            }
+
+            fetch('/customer/orders/pay/razorpay?orderId=' + orderId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Initialization Error: ' + data.error);
+                        return;
+                    }
+
+                    if (data.isMock || typeof Razorpay === 'undefined') {
+                        console.log("Mock Razorpay Order or Razorpay script missing. Simulating payment success...");
+                        alert("Local Fallback: Simulating successful Razorpay checkout...");
+                        verifyRazorpayPayment(orderId, data.razorpayOrderId || ("mock_order_" + orderId), "pay_mock_" + Math.random().toString(36).substring(2, 11), "sig_mock_" + Math.random().toString(36).substring(2, 11));
+                        return;
+                    }
+
+                    const options = {
+                        "key": data.keyId,
+                        "amount": data.amount,
+                        "currency": data.currency,
+                        "name": "LogiTrack Pro",
+                        "description": "Payment for Order #" + orderId,
+                        "order_id": data.razorpayOrderId,
+                        "handler": function (response) {
+                            verifyRazorpayPayment(orderId, response.razorpay_order_id, response.razorpay_payment_id, response.razorpay_signature);
+                        },
+                        "prefill": {
+                            "name": data.customerName,
+                            "email": data.customerEmail,
+                            "contact": data.customerPhone
+                        },
+                        "modal": {
+                            "ondismiss": function() {
+                                window.location.href = '/customer/orders/failed?orderId=' + orderId;
+                            }
+                        },
+                        "theme": {
+                            "color": "#0F172A"
+                        }
+                    };
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+                })
+                .catch(err => {
+                    alert('Error preparing payment parameters: ' + err.message);
+                });
+        }
+
+        function verifyRazorpayPayment(orderId, razorpayOrderId, razorpayPaymentId, signature) {
+            const formData = new FormData();
+            formData.append('orderId', orderId);
+            formData.append('razorpay_order_id', razorpayOrderId);
+            formData.append('razorpay_payment_id', razorpayPaymentId);
+            formData.append('razorpay_signature', signature);
+
+            const csrfToken = document.querySelector("meta[name='_csrf']")?.getAttribute("content");
+            const csrfHeader = document.querySelector("meta[name='_csrf_header']")?.getAttribute("content");
+
+            const headers = {};
+            if (csrfToken && csrfHeader) {
+                headers[csrfHeader] = csrfToken;
+            }
+
+            fetch('/customer/orders/pay/verify', {
+                method: 'POST',
+                headers: headers,
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Payment successful and verified!');
+                    window.location.href = '/customer/orders';
+                } else {
+                    window.location.href = '/customer/orders/failed?orderId=' + orderId;
+                }
+            })
+            .catch(err => {
+                window.location.href = '/customer/orders/failed?orderId=' + orderId;
+            });
+        }
+    </script>
+</body>
+</html>

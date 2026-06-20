@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Invoice - LogiTrack Pro</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8fafc;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .invoice-card {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.05);
+            border: none;
+            overflow: hidden;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+        .invoice-header {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: #ffffff;
+            padding: 2.5rem;
+        }
+        .invoice-body {
+            padding: 2.5rem;
+        }
+        .table-invoice th {
+            font-weight: 600;
+            color: #475569;
+            background-color: #f1f5f9;
+        }
+        .brand-accent {
+            color: #f97316;
+            font-weight: 700;
+        }
+        @media print {
+            body {
+                background-color: #ffffff;
+            }
+            .invoice-card {
+                box-shadow: none;
+                margin-top: 0;
+                margin-bottom: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .invoice-header {
+                background: #0f172a !important;
+                color: #ffffff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container d-flex justify-content-center">
+        <div class="col-lg-8">
+            
+            <div class="no-print d-flex justify-content-between align-items-center mt-4 px-2">
+                <a th:href="@{/customer/orders}" class="btn btn-outline-secondary rounded-pill px-4">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Orders
+                </a>
+                <button onclick="window.print()" class="btn btn-primary rounded-pill px-4 bg-orange border-0" style="background-color: #f97316;">
+                    <i class="bi bi-printer me-1"></i>Print Invoice
+                </button>
+            </div>
+
+            <div class="card invoice-card">
+                <!-- Header -->
+                <div class="invoice-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-1 fw-bold"><i class="bi bi-truck me-2"></i>LogiTrack <span class="brand-accent">Pro</span></h3>
+                        <p class="mb-0 text-white-50 small">Premium Delivery Logistics Solutions</p>
+                    </div>
+                    <div class="text-end">
+                        <h4 class="mb-0 fw-bold">TAX INVOICE</h4>
+                        <p class="mb-0 text-white-50 small" th:text="${'Invoice ID: INV-' + order.orderId}">Invoice ID: INV-1</p>
+                    </div>
+                </div>
+
+                <!-- Body -->
+                <div class="invoice-body">
+                    <!-- Billing details -->
+                    <div class="row mb-4">
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+                            <h6 class="text-muted text-uppercase small fw-bold mb-2">Billed To</h6>
+                            <h5 class="fw-bold text-dark mb-1" th:text="${order.customer.name}">Customer Name</h5>
+                            <p class="text-secondary mb-1" th:text="${'Phone: ' + order.customer.phone}">Phone: 9876543210</p>
+                            <p class="text-secondary mb-1" th:text="${'Email: ' + order.customer.email}">Email: customer@example.com</p>
+                            <p class="text-secondary mb-0" th:text="${'Shipping Address: ' + order.customer.address}">Address details...</p>
+                        </div>
+                        <div class="col-sm-6 text-sm-end">
+                            <h6 class="text-muted text-uppercase small fw-bold mb-2">Order Summary</h6>
+                            <p class="text-secondary mb-1">Status: 
+                                <span class="badge rounded-pill fw-bold" 
+                                      th:classappend="${order.paymentStatus == 'PAID' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'}" 
+                                      th:text="${order.paymentStatus}">PAID</span>
+                            </p>
+                            <p class="text-secondary mb-1" th:text="${'Order Date: ' + #temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">Date: 2026-06-15 12:00</p>
+                            <p class="text-secondary mb-0" th:text="${'Package Delivery Reference: #' + order.delivery.id}">Delivery Ref: #1</p>
+                        </div>
+                    </div>
+
+                    <hr class="text-muted mb-4"/>
+
+                    <!-- Invoice Table -->
+                    <h6 class="text-muted text-uppercase small fw-bold mb-3"><i class="bi bi-box-seam text-dark me-1"></i>Purchase & Logistics Ledger</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-invoice align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Item & Description</th>
+                                    <th class="text-center" style="width: 100px;">Qty</th>
+                                    <th class="text-end" style="width: 150px;">Unit Price</th>
+                                    <th class="text-end" style="width: 180px;">Total Price</th>
+                                </tr>
+                            </thead>
+                            <tbody class="small text-secondary">
+                                 <tr th:if="${order.productName != null}">
+                                     <td>
+                                         <span class="fw-bold text-dark" th:text="${order.productName}">Product Name</span>
+                                         <br/><small class="text-muted" th:text="${'Merchant pickup: ' + order.delivery.pickupAddress}">Pickup address</small>
+                                     </td>
+                                     <td class="text-center text-dark" th:text="${order.quantity}">1</td>
+                                     <td class="text-end text-dark" th:text="${'₹' + order.productPrice}">₹0.00</td>
+                                     <td class="text-end text-dark" th:text="${'₹' + (order.productPrice * order.quantity)}">₹0.00</td>
+                                 </tr>
+                                 <tr th:if="${order.productName == null}">
+                                     <td>
+                                         <span class="fw-bold text-dark" th:text="${order.parcelDescription}">Parcel Description</span>
+                                         <span class="badge bg-light text-dark ms-1" th:text="${order.packageType}">Document</span>
+                                         <br/><small class="text-muted" th:text="${'Pickup: ' + order.delivery.pickupAddress}">Pickup address</small>
+                                     </td>
+                                     <td class="text-center text-dark">1</td>
+                                     <td class="text-end text-dark">—</td>
+                                     <td class="text-end text-dark">—</td>
+                                 </tr>
+                                 <tr>
+                                     <td>
+                                         <span class="fw-bold text-dark" th:text="${'LogiTrack Express Shipping (' + order.parcelWeight + ' kg)'}">LogiTrack Express Shipping</span>
+                                         <br/><small class="text-muted" th:text="${'Delivery destination: ' + order.delivery.deliveryAddress}">Delivery destination</small>
+                                     </td>
+                                     <td class="text-center text-dark">—</td>
+                                     <td class="text-end text-dark">—</td>
+                                     <td class="text-end text-dark" th:text="${'₹' + order.deliveryCharge}">₹50.00</td>
+                                 </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Receipt summary breakdown -->
+                    <div class="row justify-content-end mt-4">
+                        <div class="col-md-5">
+                            <div class="d-flex justify-content-between mb-2 text-secondary small">
+                                <span>Subtotal</span>
+                                <span class="text-dark" th:text="${'₹' + (order.productPrice * order.quantity + order.deliveryCharge)}">₹0.00</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2 text-secondary small">
+                                <span>Service Tax (5%)</span>
+                                <span class="text-dark" th:text="${'₹' + order.tax}">₹0.00</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center border-top pt-2">
+                                <span class="fw-bold text-dark">Grand Total</span>
+                                <h4 class="fw-bold text-success mb-0" th:text="${'₹' + order.totalPrice}">₹0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer signature info -->
+                    <div class="row mt-5 pt-4">
+                        <div class="col-6">
+                            <p class="text-muted small mb-5">Issued By</p>
+                            <div style="border-bottom: 1px solid #cbd5e1; width: 150px;"></div>
+                            <p class="text-secondary small mt-2">Accounts & Operations</p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <p class="text-muted small mb-5">Customer Acknowledgment</p>
+                            <div class="d-inline-block" style="border-bottom: 1px solid #cbd5e1; width: 150px;"></div>
+                            <p class="text-secondary small mt-2">Signature & Seal</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disclaimer -->
+            <p class="text-center text-muted small no-print mb-5">Thank you for shipping with LogiTrack Pro. For queries, contact support@logitrack.com.</p>
+
+        </div>
+    </div>
+
+</body>
+</html>

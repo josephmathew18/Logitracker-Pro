@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Vehicles - Delivery Service Provider Management System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar (Desktop-only) -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="bi bi-truck me-2"></i>LogiTrack <span>Pro</span>
+            </div>
+                        <div class="sidebar-menu">
+                <a th:href="@{/admin/dashboard}" class="sidebar-item "><i class="bi bi-grid"></i>Dashboard</a>
+                <a th:href="@{/admin/agents}" class="sidebar-item "><i class="bi bi-people-fill"></i>Manage Agents</a>
+                <a th:href="@{/admin/vehicles}" class="sidebar-item active"><i class="bi bi-truck"></i>Manage Vehicles</a>
+                <a th:href="@{/admin/assign}" class="sidebar-item "><i class="bi bi-plus-circle-fill"></i>Allocate Deliveries</a>
+                <a th:href="@{/admin/monitor}" class="sidebar-item "><i class="bi bi-geo-alt-fill"></i>Monitor Deliveries</a>
+                <a th:href="@{/admin/reports}" class="sidebar-item "><i class="bi bi-file-earmark-bar-graph-fill"></i>Reports & Expenses</a>
+                <a th:href="@{/admin/payments}" class="sidebar-item "><i class="bi bi-wallet2"></i>Salary & Payments</a>
+                <a th:href="@{/admin/refunds}" class="sidebar-item "><i class="bi bi-arrow-counterclockwise"></i>Refund Management</a>
+                <a th:href="@{/admin/feedback}" class="sidebar-item "><i class="bi bi-star-fill"></i>Feedback Reviews</a>
+                <a th:href="@{/admin/attendance}" class="sidebar-item "><i class="bi bi-calendar-check-fill"></i>Attendance</a>
+                <a th:href="@{/admin/leaves}" class="sidebar-item "><i class="bi bi-calendar-minus-fill"></i>Leaves</a>
+                <a th:href="@{/admin/maintenance}" class="sidebar-item "><i class="bi bi-wrench"></i>Maintenance</a>
+                <a th:href="@{/admin/performance}" class="sidebar-item "><i class="bi bi-graph-up-arrow"></i>Performance</a>
+                <a th:href="@{/admin/analytics}" class="sidebar-item "><i class="bi bi-pie-chart-fill"></i>Analytics</a>
+                <a th:href="@{/admin/documents}" class="sidebar-item "><i class="bi bi-file-earmark-medical-fill"></i>Documents</a>
+                <a th:href="@{/admin/audit-logs}" class="sidebar-item "><i class="bi bi-shield-check"></i>Audit Logs</a>
+                <a th:href="@{/admin/agents/history}" class="sidebar-item "><i class="bi bi-clock-history"></i>Agent History</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Top App Header (Mobile-only) -->
+            <div class="app-header">
+                <i class="bi bi-list app-header-icon"></i>
+                <h1 class="app-header-title">LogiTrack Pro</h1>
+                <div class="d-flex gap-3">
+                    <i class="bi bi-search app-header-icon"></i>
+                    <i class="bi bi-bell app-header-icon"></i>
+                </div>
+            </div>
+
+            <!-- Desktop Navbar (Desktop-only) -->
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='Manage Vehicles')}"></div>
+
+            <div class="content-body">
+                <!-- Notifications -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Add Vehicle Form -->
+                    <div class="col-lg-4">
+                        <div class="card custom-card p-4">
+                            <h5 class="font-weight-bold mb-3">Add Fleet Vehicle</h5>
+                            <form th:action="@{/admin/vehicles/add}" method="POST">
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-medium text-secondary">Vehicle Number</label>
+                                    <input type="text" class="form-control" name="vehicleNumber" placeholder="e.g. AB-12-CD-3456" maxlength="20" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-medium text-secondary">Vehicle Model</label>
+                                    <input type="text" class="form-control" name="model" placeholder="e.g. Honda Activa" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-medium text-secondary">Vehicle Type</label>
+                                    <select class="form-select" name="vehicleType" required>
+                                        <option value="">-- Choose Type --</option>
+                                        <option value="Bike">Bike (Motorcycle)</option>
+                                        <option value="Car">Car</option>
+                                        <option value="Van">Delivery Van</option>
+                                        <option value="Truck">Cargo Truck</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-medium text-secondary">Fuel Type</label>
+                                    <select class="form-select" name="fuelType" required>
+                                        <option value="">-- Choose Fuel --</option>
+                                        <option value="Petrol">Petrol</option>
+                                        <option value="Diesel">Diesel</option>
+                                        <option value="EV">EV</option>
+                                        <option value="CNG">CNG</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-medium text-secondary">Insurance Details</label>
+                                    <input type="text" class="form-control" name="insuranceDetails" placeholder="e.g. Policy #882194, Expiry: 2028" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-medium text-secondary">Maximum Load Capacity (kg)</label>
+                                    <input type="number" step="0.1" class="form-control" name="maxLoadCapacity" placeholder="e.g. 15.0" min="0.1" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary-custom w-100 py-2 mt-2">
+                                    <i class="bi bi-plus-square-fill me-2"></i>Add Vehicle
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Vehicles List -->
+                    <div class="col-lg-8">
+                        <div class="card custom-card p-4 h-100">
+                            <h5 class="font-weight-bold mb-3">Fleet Overview</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-custom align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Vehicle Number</th>
+                                            <th>Model</th>
+                                            <th>Type</th>
+                                            <th>Fuel</th>
+                                            <th>Max Cap (kg)</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="vehicle : ${vehicles}">
+                                            <td th:text="${vehicle.id}">1</td>
+                                            <td class="font-weight-bold" th:text="${vehicle.vehicleNumber}">AB-12-CD-3456</td>
+                                            <td th:text="${vehicle.model}">Honda Activa</td>
+                                            <td th:text="${vehicle.vehicleType}">Bike</td>
+                                            <td th:text="${vehicle.fuelType}">Petrol</td>
+                                            <td th:text="${vehicle.maxLoadCapacity + ' kg'}">15.0 kg</td>
+                                            <td>
+                                                <span class="badge badge-pill-custom" 
+                                                      th:classappend="${vehicle.status == 'AVAILABLE' ? 'badge-delivered' : 
+                                                                        vehicle.status == 'ASSIGNED' ? 'badge-assigned' : 'badge-rejected'}"
+                                                      th:text="${vehicle.status}">Status</span>
+                                            </td>
+                                            <td>
+                                                <!-- Edit trigger button and Delete button -->
+                                                <button class="btn btn-sm btn-outline-secondary me-1" 
+                                                        data-bs-toggle="modal" 
+                                                        th:data-bs-target="${'#editModal' + vehicle.id}">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>
+                                                <a th:href="@{/admin/vehicles/delete/{id}(id=${vehicle.id})}" 
+                                                   class="btn btn-sm btn-outline-danger" 
+                                                   onclick="return confirm('Are you sure you want to remove this vehicle?')">
+                                                    <i class="bi bi-trash-fill"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(vehicles)}">
+                                            <td colspan="8" class="text-center text-muted py-5">No fleet vehicles found. Use the add form to insert.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sticky Bottom Tab Navigation (Mobile-only) -->
+            <div class="bottom-nav">
+                <a th:href="@{/admin/dashboard}" class="bottom-nav-item">
+                    <div class="bottom-nav-icon-container">
+                        <i class="bi bi-grid"></i>
+                    </div>
+                    <span>Home</span>
+                </a>
+                <a th:href="@{/admin/assign}" class="bottom-nav-item">
+                    <div class="bottom-nav-icon-container">
+                        <i class="bi bi-clipboard2-data"></i>
+                    </div>
+                    <span>Requests</span>
+                </a>
+                <a th:href="@{/admin/vehicles}" class="bottom-nav-item active">
+                    <div class="bottom-nav-icon-container">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <span>Fleet</span>
+                </a>
+                <a th:href="@{/logout}" class="bottom-nav-item text-danger">
+                    <div class="bottom-nav-icon-container text-danger">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </div>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modals -->
+    <div th:each="vehicle : ${vehicles}">
+        <!-- Edit Modal -->
+        <div class="modal fade" th:id="${'editModal' + vehicle.id}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="border-radius: 1rem; border: none; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title font-weight-bold text-dark">Update Vehicle Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form th:action="@{/admin/vehicles/update/{id}(id=${vehicle.id})}" method="POST">
+                        <div class="modal-body text-start">
+                            <div class="mb-3">
+                                <label class="form-label font-weight-medium text-secondary">Vehicle Number</label>
+                                <input type="text" class="form-control" name="vehicleNumber" th:value="${vehicle.vehicleNumber}" maxlength="20" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label font-weight-medium text-secondary">Vehicle Model</label>
+                                <input type="text" class="form-control" name="model" th:value="${vehicle.model}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label font-weight-medium text-secondary">Vehicle Type</label>
+                                <select class="form-select" name="vehicleType" required>
+                                    <option value="Bike" th:selected="${vehicle.vehicleType == 'Bike'}">Bike</option>
+                                    <option value="Car" th:selected="${vehicle.vehicleType == 'Car'}">Car</option>
+                                    <option value="Van" th:selected="${vehicle.vehicleType == 'Van'}">Delivery Van</option>
+                                    <option value="Truck" th:selected="${vehicle.vehicleType == 'Truck'}">Cargo Truck</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label font-weight-medium text-secondary">Fuel Type</label>
+                                <select class="form-select" name="fuelType" required>
+                                    <option value="Petrol" th:selected="${vehicle.fuelType == 'Petrol'}">Petrol</option>
+                                    <option value="Diesel" th:selected="${vehicle.fuelType == 'Diesel'}">Diesel</option>
+                                    <option value="EV" th:selected="${vehicle.fuelType == 'EV'}">EV</option>
+                                    <option value="CNG" th:selected="${vehicle.fuelType == 'CNG'}">CNG</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label font-weight-medium text-secondary">Insurance Details</label>
+                                <input type="text" class="form-control" name="insuranceDetails" th:value="${vehicle.insuranceDetails}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label font-weight-medium text-secondary">Maximum Load Capacity (kg)</label>
+                                <input type="number" step="0.1" class="form-control" name="maxLoadCapacity" th:value="${vehicle.maxLoadCapacity}" min="0.1" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label font-weight-medium text-secondary">Status</label>
+                                <select class="form-select" name="status" required>
+                                    <option value="AVAILABLE" th:selected="${vehicle.status == 'AVAILABLE'}">AVAILABLE</option>
+                                    <option value="ASSIGNED" th:selected="${vehicle.status == 'ASSIGNED'}">ASSIGNED</option>
+                                    <option value="MAINTENANCE" th:selected="${vehicle.status == 'MAINTENANCE'}">MAINTENANCE</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal" style="font-size: 0.85rem; font-weight: 600;">Close</button>
+                            <button type="submit" class="btn btn-primary-custom px-4 rounded-pill" style="font-size: 0.85rem; font-weight: 600;">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

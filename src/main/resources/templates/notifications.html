@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Notifications - Delivery Service Provider Management System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/custom.css}">
+    <style>
+        .notif-card-item {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .notif-card-item.unread {
+            background-color: #f8fafc;
+            border-left-color: var(--primary-color);
+        }
+
+        .notif-card-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .notif-type-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .notif-type-general { background-color: #e0f2fe; color: #0284c7; }
+        .notif-type-alert { background-color: #fee2e2; color: #dc2626; }
+        .notif-type-success { background-color: #d1fae5; color: #059669; }
+        .notif-type-salary { background-color: #fef3c7; color: #d97706; }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+        <!-- Sidebar for Admin -->
+        <div class="sidebar" sec:authorize="hasRole('ADMIN')">
+            <div class="sidebar-header">
+                <i class="bi bi-truck-flatbed me-2"></i>LogiTrack<span>Pro</span>
+            </div>
+            <div class="sidebar-menu">
+                <a th:href="@{/admin/dashboard}" class="sidebar-item"><i class="bi bi-grid-fill"></i>Dashboard</a>
+                <a th:href="@{/admin/agents}" class="sidebar-item"><i class="bi bi-people-fill"></i>Agent Directory</a>
+                <a th:href="@{/admin/vehicles}" class="sidebar-item"><i class="bi bi-truck-front-fill"></i>Vehicle Fleet</a>
+                <a th:href="@{/admin/assign}" class="sidebar-item"><i class="bi bi-pin-map-fill"></i>Allocate Deliveries</a>
+                <a th:href="@{/admin/payments}" class="sidebar-item"><i class="bi bi-credit-card-fill"></i>Payment Center</a>
+                <a th:href="@{/admin/reports}" class="sidebar-item"><i class="bi bi-file-earmark-bar-graph-fill"></i>Settlements Report</a>
+                <a th:href="@{/admin/refunds}" class="sidebar-item"><i class="bi bi-arrow-counterclockwise"></i>Refund Management</a>
+                <a th:href="@{/admin/feedback}" class="sidebar-item"><i class="bi bi-star-fill"></i>Feedback Reviews</a>
+                <a th:href="@{/admin/attendance}" class="sidebar-item"><i class="bi bi-calendar-check-fill"></i>Attendance</a>
+                <a th:href="@{/admin/leaves}" class="sidebar-item"><i class="bi bi-calendar-minus-fill"></i>Leaves</a>
+                <a th:href="@{/admin/maintenance}" class="sidebar-item"><i class="bi bi-wrench"></i>Maintenance</a>
+                <a th:href="@{/admin/performance}" class="sidebar-item"><i class="bi bi-graph-up-arrow"></i>Performance</a>
+                <a th:href="@{/admin/analytics}" class="sidebar-item"><i class="bi bi-pie-chart-fill"></i>Analytics</a>
+                <a th:href="@{/admin/documents}" class="sidebar-item"><i class="bi bi-file-earmark-medical-fill"></i>Documents</a>
+                <a th:href="@{/admin/audit-logs}" class="sidebar-item"><i class="bi bi-shield-check"></i>Audit Logs</a>
+                <a th:href="@{/admin/agents/history}" class="sidebar-item"><i class="bi bi-clock-history"></i>Agent History</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Sidebar for Agent -->
+        <div class="sidebar" sec:authorize="hasRole('AGENT')">
+            <div class="sidebar-header">
+                <i class="bi bi-truck-flatbed me-2"></i>LogiTrack<span>Pro</span>
+            </div>
+            <div class="sidebar-menu">
+                <a th:href="@{/agent/dashboard}" class="sidebar-item"><i class="bi bi-card-list"></i>My Shipments</a>
+                <a th:href="@{/agent/expenses}" class="sidebar-item"><i class="bi bi-fuel-pump-fill"></i>Refuel Expenses</a>
+                <a th:href="@{/agent/salaries}" class="sidebar-item"><i class="bi bi-wallet-fill"></i>My Salary</a>
+                <a th:href="@{/agent/feedback}" class="sidebar-item"><i class="bi bi-star-fill"></i>My Ratings</a>
+                <a th:href="@{/agent/attendance}" class="sidebar-item"><i class="bi bi-calendar-check-fill"></i>My Attendance</a>
+                <a th:href="@{/agent/leaves}" class="sidebar-item"><i class="bi bi-calendar-minus-fill"></i>My Leaves</a>
+                <a th:href="@{/agent/documents}" class="sidebar-item"><i class="bi bi-file-earmark-medical-fill"></i>My Documents</a>
+                
+                <!-- My Profile Dropdown/Submenu -->
+                <a href="#profileSubmenu" data-bs-toggle="collapse" class="sidebar-item d-flex justify-content-between align-items-center" aria-expanded="false">
+                    <span><i class="bi bi-person-circle"></i>My Profile</span>
+                    <i class="bi bi-chevron-down small" style="margin-right:0; font-size: 0.8rem;"></i>
+                </a>
+                <div class="collapse" id="profileSubmenu">
+                    <a th:href="@{/agent/profile}" class="sidebar-item" style="padding-left: 2.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-person-badge-fill"></i>Profile Details
+                    </a>
+                    <a th:href="@{/agent/change-password}" class="sidebar-item" style="padding-left: 2.5rem; font-size: 0.9rem;">
+                        <i class="bi bi-key-fill"></i>Change Password
+                    </a>
+                </div>
+
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Sidebar for Customer -->
+        <div class="sidebar" sec:authorize="hasRole('CUSTOMER')">
+            <div class="sidebar-header">
+                <i class="bi bi-truck-flatbed me-2"></i>LogiTrack<span>Pro</span>
+            </div>
+            <div class="sidebar-menu">
+                <a th:href="@{/customer/dashboard}" class="sidebar-item"><i class="bi bi-grid-fill"></i>Client Dashboard</a>
+                <a th:href="@{/customer/orders}" class="sidebar-item"><i class="bi bi-cart-plus-fill"></i>Create Delivery Order</a>
+                <a th:href="@{/customer/payments}" class="sidebar-item"><i class="bi bi-credit-card-2-front"></i>Transactions</a>
+                <a th:href="@{/customer/cancellations}" class="sidebar-item"><i class="bi bi-x-octagon-fill"></i>Cancellations</a>
+                <a th:href="@{/customer/feedback}" class="sidebar-item"><i class="bi bi-star-fill"></i>My Feedback</a>
+                <a th:href="@{/logout}" class="sidebar-item mt-5 text-danger"><i class="bi bi-box-arrow-right"></i>Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Navbar Fragment Replacement -->
+            <div th:replace="~{fragments/navbar :: navbar(pageTitle='My Notifications')}"></div>
+
+            <div class="content-body">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="app-page-title mb-0">Alert Notifications</h2>
+                    <button th:if="${not #lists.isEmpty(notifications)}" class="btn btn-outline-primary rounded-pill px-4" onclick="markAllNotificationsRead()">
+                        <i class="bi bi-check2-all me-1"></i>Mark All as Read
+                    </button>
+                </div>
+
+                <!-- Notifications Grid / List -->
+                <div class="card custom-card p-4 bg-white">
+                    <div th:if="${#lists.isEmpty(notifications)}" class="text-center py-5 text-muted">
+                        <i class="bi bi-bell-slash fs-1 d-block mb-3"></i>
+                        <p class="mb-0">You have no notifications yet.</p>
+                    </div>
+
+                    <div th:if="${not #lists.isEmpty(notifications)}" class="d-flex flex-column gap-3">
+                        <div th:each="n : ${notifications}" class="card p-3 border rounded-3 notif-card-item" th:classappend="${n.isRead ? '' : 'unread'}" th:id="${'notif-card-' + n.id}">
+                            <div class="d-flex gap-3 align-items-start">
+                                <!-- Type Aware Icon -->
+                                <div class="notif-type-icon" th:classappend="${n.type == 'ALERT' || n.type == 'FAIL' ? 'notif-type-alert' : (n.type == 'SUCCESS' ? 'notif-type-success' : (n.type == 'SALARY' ? 'notif-type-salary' : 'notif-type-general'))}">
+                                    <i th:class="${n.type == 'ALERT' || n.type == 'FAIL' ? 'bi bi-exclamation-triangle-fill' : (n.type == 'SUCCESS' ? 'bi bi-check-circle-fill' : (n.type == 'SALARY' ? 'bi bi-wallet2' : 'bi bi-info-circle-fill'))}"></i>
+                                </div>
+                                <div class="w-100">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h6 class="font-weight-bold text-dark mb-1" th:text="${n.title}">Notification Title</h6>
+                                        <span class="small text-muted" th:text="${#temporals.format(n.createdAt, 'yyyy-MM-dd HH:mm')}">Date</span>
+                                    </div>
+                                    <p class="text-secondary small mb-2" th:text="${n.message}">Notification Message Content...</p>
+                                    <button th:if="${!n.isRead}" class="btn btn-sm btn-light border py-1 px-3 rounded-pill font-weight-medium" th:onclick="'markCardRead(' + ${n.id} + ')'">
+                                        <i class="bi bi-check2 me-1 text-primary"></i>Mark Read
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function markCardRead(id) {
+            fetch('/api/notifications/mark-read/' + id, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const card = document.getElementById('notif-card-' + id);
+                        if (card) {
+                            card.classList.remove('unread');
+                            const btn = card.querySelector('button');
+                            if (btn) btn.remove();
+                        }
+                        // Trigger reload count in header
+                        if (window.loadNotifications) window.loadNotifications();
+                    }
+                })
+                .catch(err => console.error("Error marking notification as read:", err));
+        }
+
+        function markAllNotificationsRead() {
+            fetch('/api/notifications/mark-all-read', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    }
+                })
+                .catch(err => console.error("Error marking all read:", err));
+        }
+    </script>
+</body>
+
+</html>
