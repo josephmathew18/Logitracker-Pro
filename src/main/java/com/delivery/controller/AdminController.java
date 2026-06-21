@@ -28,12 +28,14 @@ public class AdminController {
     private final PdfGenerationService pdfGenerationService;
     private final AuditLogService auditLogService;
     private final AttendanceService attendanceService;
+    private final DatabaseCleanupService databaseCleanupService;
 
     public AdminController(AgentService agentService, VehicleService vehicleService,
                            DeliveryService deliveryService, ExpenseService expenseService,
                            FeedbackService feedbackService, SalaryService salaryService,
                            PaymentService paymentService, PdfGenerationService pdfGenerationService,
-                           AuditLogService auditLogService, AttendanceService attendanceService) {
+                           AuditLogService auditLogService, AttendanceService attendanceService,
+                           DatabaseCleanupService databaseCleanupService) {
         this.agentService = agentService;
         this.vehicleService = vehicleService;
         this.deliveryService = deliveryService;
@@ -44,6 +46,7 @@ public class AdminController {
         this.pdfGenerationService = pdfGenerationService;
         this.auditLogService = auditLogService;
         this.attendanceService = attendanceService;
+        this.databaseCleanupService = databaseCleanupService;
     }
 
     @GetMapping("/payments")
@@ -240,6 +243,18 @@ public class AdminController {
         model.addAttribute("weightReport", weightReport);
 
         return "admin/dashboard";
+    }
+
+    @PostMapping("/database/reset")
+    public String resetDatabase(RedirectAttributes redirectAttributes) {
+        try {
+            databaseCleanupService.cleanupDatabase();
+            auditLogService.log("admin", "ADMIN", "DATABASE_RESET", "Cleaned and reset system database, preserving Agent 1001, Customers, and Admin accounts.");
+            redirectAttributes.addFlashAttribute("successMessage", "Database cleaned and reset successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Database reset failed: " + e.getMessage());
+        }
+        return "redirect:/admin/dashboard";
     }
 
     @GetMapping("/agents")
